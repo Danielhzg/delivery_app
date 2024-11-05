@@ -5,7 +5,7 @@ import 'pages/home_page.dart';
 import 'pages/search_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/profile_page.dart';
-import 'widgets/side_navbar.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +57,7 @@ class _MainPageState extends State<MainPage> {
         title: Text('Delivery App'),
         backgroundColor: Colors.orange,
       ),
-      drawer: SideNavbar(),
+     
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
