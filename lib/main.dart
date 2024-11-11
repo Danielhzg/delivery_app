@@ -1,42 +1,74 @@
 import 'package:delivery_app/pages/Login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/home_page.dart';
-import 'pages/search_page.dart';
+import 'pages/comment_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/profile_page.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Delivery App',
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-      ),
-      home: LoginPage(), // Navigates based on login status
+    return const MaterialApp(
+      home: LoginCheck(), // Navigate based on login status
     );
   }
 }
 
-class LoginCheck extends StatelessWidget {
+class LoginCheck extends StatefulWidget {
+  const LoginCheck({super.key});
+
+  @override
+  _LoginCheckState createState() => _LoginCheckState();
+}
+
+class _LoginCheckState extends State<LoginCheck> {
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  // Fungsi untuk mengecek status login menggunakan SharedPreferences
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? isLoggedIn = prefs.getBool('isLoggedIn');
+    if (isLoggedIn != null && isLoggedIn) {
+      setState(() {
+        _isLoggedIn = true;
+      });
+    } else {
+      setState(() {
+        _isLoggedIn = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Here you would normally check authentication status
-    bool isLoggedIn = true; // Set this based on your login logic
+    // Memastikan status login sudah diproses
+    if (_isLoggedIn == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-    return isLoggedIn ? MainPage() : LoginPage();
+    return _isLoggedIn ? const MainPage() : const LoginPage();
   }
 }
 
 class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
   @override
   _MainPageState createState() => _MainPageState();
 }
@@ -44,20 +76,15 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
   final List<Widget> _pages = [
-    HomePage(),
-    SearchPage(),
-    CartPage(),
+    const HomePage(),
+    CartPage(), // Hanya memanggil constructor tanpa parameter Passing empty list for CartPage as placeholder
+    CommentPage(),
     ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Delivery App'),
-        backgroundColor: Colors.orange,
-      ),
-     
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -66,14 +93,27 @@ class _MainPageState extends State<MainPage> {
             _currentIndex = index;
           });
         },
-        backgroundColor: Colors.orange,
         selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.black,
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(_currentIndex == 0 ? Icons.home : Icons.home_outlined),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(_currentIndex == 1 ? Icons.shopping_bag : Icons.shopping_bag_outlined),
+            label: 'Order',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(_currentIndex == 2 ? Icons.chat_bubble : Icons.chat_bubble_outline),
+            label: 'Inbox',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(_currentIndex == 3 ? Icons.person : Icons.person_outline),
+            label: 'Profile',
+          ),
         ],
       ),
     );

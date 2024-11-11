@@ -1,10 +1,13 @@
-import 'dart:async'; // Import Timer
+import 'dart:async';
 import 'package:delivery_app/item_details/item_detail_burger.dart';
+import 'package:delivery_app/item_details/item_detail_kopi.dart';
 import 'package:delivery_app/item_details/item_detail_pizza.dart';
+import 'package:delivery_app/item_details/item_detail_friedChicken.dart';
 import 'package:flutter/material.dart';
 
-// Main Home Page
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -13,189 +16,206 @@ class _HomePageState extends State<HomePage> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
   Timer? _timer;
-  Timer? _flashSaleTimer;
-  Duration _flashSaleDuration = Duration(hours: 2, minutes: 0, seconds: 0); // Set initial duration
+  bool _isDarkTheme = false; // Variabel untuk tema
 
   @override
   void initState() {
     super.initState();
-
-    // Timer untuk auto-slide
-    _timer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
-      if (_currentPage < 2) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
-
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      setState(() {
+        _currentPage = (_currentPage + 1) % 2;
+      });
       _pageController.animateToPage(
         _currentPage,
-        duration: Duration(milliseconds: 350),
+        duration: const Duration(milliseconds: 350),
         curve: Curves.easeIn,
       );
-    });
-
-    // Timer untuk flash sale countdown
-    _flashSaleTimer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
-      setState(() {
-        if (_flashSaleDuration.inSeconds > 0) {
-          _flashSaleDuration = Duration(seconds: _flashSaleDuration.inSeconds - 1);
-        } else {
-          timer.cancel(); // Stop timer when countdown reaches zero
-        }
-      });
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Matikan timer saat tidak diperlukan
-    _flashSaleTimer?.cancel(); // Stop flash sale timer
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
+  // Fungsi untuk mengganti tema
+  void _toggleTheme() {
+    setState(() {
+      _isDarkTheme = !_isDarkTheme;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF4F6F9), // Light background
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Promo Banner Section
-            Container(
-              height: 200,
-              margin: EdgeInsets.all(16),
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (int page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                children: [
-                  _buildPromoBanner('assets/burger.jpeg', 'SALE UP TO 50%', 'Grab them now!'),
-                  _buildPromoBanner('assets/pizza.jpeg', 'Best Deals', 'Exclusive offers for you!'),
-                  _buildPromoBanner('assets/kopi.jpeg', 'Limited Time Offer', 'Don\'t miss out!'),
-                ],
-              ),
+    return MaterialApp(
+      theme: _isDarkTheme
+          ? ThemeData.dark().copyWith(
+              scaffoldBackgroundColor: Colors.black,
+              appBarTheme: AppBarTheme(backgroundColor: Colors.black),
+            )
+          : ThemeData.light().copyWith(
+              scaffoldBackgroundColor: const Color(0xFFF4F6F9),
             ),
-            SizedBox(height: 8),
-
-            // Indicator for Promo Banner
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) => _buildIndicator(index == _currentPage)),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Category Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Menu',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
-                CategoryCard('Vegetables', 'assets/burger.jpeg'),
-                CategoryCard('Fruits', 'assets/burger.jpeg'),
-                CategoryCard('Herbs', 'assets/icons/herbs.png'),
-                CategoryCard('Beverages', 'assets/icons/beverages.png'),
-                CategoryCard('Promo', 'assets/icons/promo.png'),
-                CategoryCard('Best Seller', 'assets/icons/bestseller.png'),
-                CategoryCard('Protein', 'assets/icons/protein.png'),
-                CategoryCard('Green', 'assets/icons/green.png'),
-              ],
-            ),
-            SizedBox(height: 16),
-
-            // Flash Sale Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Flash Sale',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  // Display the remaining time
-                  Text(
-                    _formatDuration(_flashSaleDuration),
-                    style: TextStyle(fontSize: 16, color: Colors.redAccent),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              height: 250,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  FlashSaleItem(
-                    'Pizza',
-                    'assets/pizza.jpeg',
-                    '\$10.00',
-                    'Best Seller',
-                    'Save 20%',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ItemDetailPizza(itemId: 1)),
-                      );
-                    },
-                  ),
-                  FlashSaleItem(
-                    'Burger',
-                    'assets/burger.jpeg',
-                    '\$8.00',
-                    'Best Seller',
-                    'Save 15%',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ItemDetailBurger(itemId: 2)),
-                      );
-                    },
-                  ),
-                  FlashSaleItem(
-                    'Kale',
-                    'assets/kopi.jpeg',
-                    '\$1.80/kg',
-                    'Best Seller',
-                    'Save 15%',
-                    onTap: () {
-                      // Add your navigation here if you create a detail page for Kale
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopSection(),
+              const SizedBox(height: 16),
+              _buildMenuSection(),
+              const SizedBox(height: 16),
+              _buildPromoBannerSlider(),
+              const SizedBox(height: 16),
+              _buildPopularItemsSection(),
+              const SizedBox(height: 16),
+              _buildFreeDeliveryBanner(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Format duration to display
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String twoDigitHours = twoDigits(duration.inHours);
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitHours:$twoDigitMinutes:$twoDigitSeconds";
+  Widget _buildTopSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: AssetImage('assets/profile.png'),
+                    radius: 15,
+                  ),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hello, Daniel',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      Text(
+                        'Welcome to Spoon Kitchen',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: Icon(
+                  _isDarkTheme ? Icons.wb_sunny : Icons.nightlight_round,
+                  color: Colors.grey[700],
+                ),
+                onPressed: _toggleTheme, // Panggil fungsi untuk mengganti tema
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 45,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.search, color: Colors.grey),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Search your food',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                Icon(Icons.filter_list, color: Colors.grey),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  // Promo Banner Widget
+  Widget _buildMenuSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildMenuItem('Pizza', Icons.local_pizza, Colors.orange),
+          _buildMenuItem('Burger', Icons.fastfood, Colors.orange),
+          _buildMenuItem('Drink', Icons.local_drink, Colors.orange),
+          _buildMenuItem('Rice', Icons.rice_bowl, Colors.orange),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, IconData icon, Color color) {
+    return Column(
+      children: [
+        Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 28),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          title,
+          style: TextStyle(
+            color: color == Colors.green ? Colors.green : Colors.black,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPromoBannerSlider() {
+    return Column(
+      children: [
+        Container(
+          height: 200,
+          margin: const EdgeInsets.all(16),
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: (int page) {
+              setState(() {
+                _currentPage = page;
+              });
+            },
+            children: [
+              _buildPromoBanner(
+                  'assets/burger.jpeg', 'BURGER', 'Today\'s Hot offer'),
+              _buildPromoBanner(
+                  'assets/pizza.jpeg', 'PIZZA', 'Get it now with 10% off'),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+              2, (index) => _buildIndicator(index == _currentPage)),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPromoBanner(String imagePath, String title, String subtitle) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
@@ -203,9 +223,9 @@ class _HomePageState extends State<HomePage> {
         children: [
           Image.asset(imagePath, fit: BoxFit.cover, width: double.infinity),
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.black26, Colors.transparent],
+                colors: [Colors.black45, Colors.transparent],
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
               ),
@@ -217,30 +237,13 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  color: Colors.orangeAccent,
-                  child: Text(
-                    'END YEAR SALE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
+                Text(subtitle,
+                    style: const TextStyle(fontSize: 16, color: Colors.white)),
               ],
             ),
           ),
@@ -249,107 +252,118 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Indicator Widget for Banner
   Widget _buildIndicator(bool isActive) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      margin: EdgeInsets.symmetric(horizontal: 4),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3),
       height: 8,
-      width: isActive ? 24 : 8,
+      width: 8,
       decoration: BoxDecoration(
-        color: isActive ? Colors.orangeAccent : Colors.grey,
-        borderRadius: BorderRadius.circular(8),
+        color: isActive ? Colors.orange : Colors.grey,
+        shape: BoxShape.circle,
       ),
     );
   }
-}
 
-// CategoryCard Widget
-class CategoryCard extends StatelessWidget {
-  final String title;
-  final String imageUrl;
-
-  const CategoryCard(this.title, this.imageUrl);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+  Widget _buildPopularItemsSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-            ),
-            padding: EdgeInsets.all(10),
-            child: Image.asset(imageUrl, height: 40, width: 40),
+          const Text('Popular Items',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildPopularItemCard('assets/burger.jpeg', 'BURGER', '1'),
+              _buildPopularItemCard('assets/pizza.jpeg', 'PIZZA', '2'),
+              _buildPopularItemCard('assets/kopi.jpeg', 'KOPI', '3'),
+              _buildPopularItemCard('assets/fried.jpeg', 'FRIED CHICKEN', '4'),
+            ],
           ),
-          SizedBox(height: 8),
-          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
-}
 
-// Flash Sale Item Widget
-class FlashSaleItem extends StatelessWidget {
-  final String title;
-  final String imageUrl;
-  final String price;
-  final String badgeText;
-  final String discountText;
-  final VoidCallback onTap;
-
-  const FlashSaleItem(this.title, this.imageUrl, this.price, this.badgeText, this.discountText, {required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        margin: EdgeInsets.all(8),
+  Widget _buildPopularItemCard(String imagePath, String title, String itemId) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          if (title == 'BURGER') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ItemDetailBurger(itemID: 1),
+              ),
+            );
+          } else if (title == 'PIZZA') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailPizza(itemID: 2),
+              ),
+            );
+          } else if (title == 'KOPI') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailKopi(itemID: 3),
+              ),
+            );
+          } else if (title == 'FRIED CHICKEN') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ItemDetailFriedChicken(itemID: 4),
+              ),
+            );
+          }
+        },
         child: Container(
-          width: 160,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  Image.asset(imageUrl, height: 120, width: double.infinity, fit: BoxFit.cover),
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      color: Colors.orange,
-                      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-                      child: Text(
-                        badgeText,
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(price, style: TextStyle(fontSize: 14, color: Colors.green)),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(discountText, style: TextStyle(fontSize: 12, color: Colors.redAccent)),
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 4,
               ),
             ],
           ),
+          child: Column(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Image.asset(imagePath, fit: BoxFit.cover, height: 130),
+              ),
+              const SizedBox(height: 8),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFreeDeliveryBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: const Center(
+        child: Text(
+          'Unlimited Free Delivery on your first month!',
+          style: TextStyle(
+              fontSize: 16, color: Colors.orange, fontWeight: FontWeight.bold),
         ),
       ),
     );

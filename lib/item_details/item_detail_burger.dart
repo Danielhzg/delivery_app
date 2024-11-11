@@ -1,140 +1,219 @@
 import 'package:flutter/material.dart';
+import 'package:delivery_app/models/order.dart'; // Pastikan untuk mengimpor model Order
+import 'package:delivery_app/pages/cart_page.dart'; // Pastikan untuk mengimpor CartPage
 
-// Dummy data for demonstration
-class Burger {
+// Dummy data for Burger
+final burger = Product(
+  name: "Burger Spesial",
+  description: "Burger juicy dengan daging segar dan sayuran crisp.",
+  imageUrl: "assets/burger.jpeg",
+  price: 7.50,
+  rating: 4.8,
+  reviews: "1k+ Rating",
+  discount: 10,
+  location: "Jakarta, Indonesia",
+);
+
+class Product {
   final String name;
   final String description;
   final String imageUrl;
   final double price;
-  final List<String> features;
+  final double rating;
+  final String reviews;
+  final int discount;
+  final String location;
 
-  Burger({
+  Product({
     required this.name,
     required this.description,
     required this.imageUrl,
     required this.price,
-    required this.features,
+    required this.rating,
+    required this.reviews,
+    required this.discount,
+    required this.location,
   });
 }
 
-//  burger data
-final Burger burger = Burger(
-  name: "Delicious Burger",
-  description: "A juicy burger with fresh ingredients and a delicious taste.",
-  imageUrl: "assets/burger.jpeg",
-  price: 8.00,
-  features: [
-    "100% Beef Patty",
-    "Fresh Lettuce",
-    "Tomato & Onion",
-    "Cheddar Cheese",
-    "Special Sauce",
-  ],
-);
+class ItemDetailBurger extends StatefulWidget {
+  final int itemID;
 
-// Item Detail Page for Burger
-class ItemDetailBurger extends StatelessWidget {
-  final int itemId; // Assuming you want to pass itemId
+  const ItemDetailBurger({super.key, required this.itemID});
 
-  ItemDetailBurger({required this.itemId});
+  @override
+  _ItemDetailBurgerState createState() => _ItemDetailBurgerState();
+}
+
+class _ItemDetailBurgerState extends State<ItemDetailBurger> {
+  int quantity = 1;
+  double deliveryFee = 3.00;
+
+  double get subtotal => burger.price * quantity;
+  double get payableTotal => subtotal + deliveryFee;
+
+  void _confirmOrder() {
+    Order newOrder = Order(
+      productName: burger.name,
+      quantity: quantity,
+      total: payableTotal,
+    );
+
+    orders.add(newOrder); // Menambahkan pesanan ke daftar global
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pesanan Berhasil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Pesanan Anda telah berhasil dibuat!'),
+              const SizedBox(height: 8),
+              const Text('Detail pesanan:'),
+              Text('${burger.name} x $quantity'),
+              Text('Total: \$${payableTotal.toStringAsFixed(2)}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CartPage()),
+                );
+              },
+              child: const Text('Lihat Keranjang'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+                Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
+              },
+              child: const Text('Selesai'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(burger.name),
-        backgroundColor: Colors.orangeAccent,
+        title: const Text('Detail Burger'),
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Image Section
-            Container(
-              height: 250,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(burger.imageUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-
-            // Product Details Section
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
                 children: [
-                  // Name and Price
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        burger.name,
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  Image.asset(
+                    burger.imageUrl,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Text(
-                        "\$${burger.price.toStringAsFixed(2)}",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
+                      child: Text(
+                        "${burger.discount}% OFF",
+                        style: const TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-
-                  // Description
-                  Text(
-                    burger.description,
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Features List
-                  Text(
-                    "Features:",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  ...burger.features.map((feature) => _buildFeatureItem(feature)).toList(),
-
-                  SizedBox(height: 20),
-
-                  // Add to Cart Button
-                  ElevatedButton(
-                    onPressed: () {
-                      // Implement add to cart functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("${burger.name} added to cart")),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent, // Use backgroundColor instead of primary
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      textStyle: TextStyle(fontSize: 18),
                     ),
-                    child: Text("Add to Cart"),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(burger.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber),
+                  const SizedBox(width: 4),
+                  Text("${burger.rating} (${burger.reviews})"),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text("\$${burger.price}", style: const TextStyle(fontSize: 20, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: () => setState(() {
+                      if (quantity > 1) quantity--;
+                    }),
+                  ),
+                  Text(quantity.toString()),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => setState(() {
+                      quantity++;
+                    }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.deepPurple),
+                  const SizedBox(width: 8),
+                  Text(burger.location),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const Text("Ringkasan Checkout", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Subtotal ($quantity)"),
+                  Text("\$${subtotal.toStringAsFixed(2)}"),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Biaya Pengiriman"),
+                  Text("\$${deliveryFee.toStringAsFixed(2)}"),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Total yang Harus Dibayar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${payableTotal.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: Colors.orange),
+                  onPressed: _confirmOrder,
+                  child: const Text("Konfirmasi Pesanan", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(String feature) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(Icons.check, color: Colors.green),
-          SizedBox(width: 8),
-          Text(feature, style: TextStyle(fontSize: 16)),
-        ],
       ),
     );
   }

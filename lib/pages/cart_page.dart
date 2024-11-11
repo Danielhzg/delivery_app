@@ -1,53 +1,28 @@
-
-import 'package:delivery_app/pages/home_page.dart';
-import 'package:delivery_app/pages/profile_page.dart';
-import 'package:delivery_app/pages/search_page.dart';
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Delivery App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      initialRoute: '/', // Rute awal
-      routes: {
-        '/': (context) => HomePage(), // Rute untuk HomePage
-        '/search': (context) => SearchPage(), // Rute untuk SearchPage
-        '/cart': (context) => CartPage(), // Rute untuk CartPage
-        '/profile': (context) => ProfilePage(), // Rute untuk ProfilePage
-      },
-    );
-  }
-}
+import 'package:delivery_app/models/order.dart'; // Pastikan untuk mengimpor model Order
 
 class CartPage extends StatelessWidget {
+  const CartPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Your Cart is Empty!',
-            style: TextStyle(fontSize: 24),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Navigasi kembali ke HomePage
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
-            child: Text('Go Back to Shopping'),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Keranjang Anda"),
       ),
+      body: orders.isEmpty
+          ? const Center(child: Text("Keranjang Anda kosong."))
+          : ListView.builder(
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return ListTile(
+                  title: Text(order.productName),
+                  subtitle: Text("Jumlah: ${order.quantity}"),
+                  trailing: Text("\$${order.total.toStringAsFixed(2)}"),
+                );
+              },
+            ),
     );
   }
 }

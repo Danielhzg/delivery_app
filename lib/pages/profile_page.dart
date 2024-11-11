@@ -1,6 +1,9 @@
 import 'package:delivery_app/pages/edit_profile_page.dart';
+import 'package:delivery_app/pages/login_page.dart';
+import 'package:delivery_app/pages/help_support_page.dart';
+import 'package:delivery_app/pages/privacy_policy_page.dart';  // Import Privacy Policy Page
+import 'package:delivery_app/pages/agreement_page.dart';       // Import Agreement Page
 import 'package:flutter/material.dart';
-import 'help_support_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -11,7 +14,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _name = 'John Doe';
   String _email = 'john.doe@example.com';
 
-  // Fungsi untuk mengedit profil
+  // Function to edit profile
   void _editProfile() async {
     final result = await Navigator.push(
       context,
@@ -27,10 +30,39 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // Function to log out and navigate to the login page
+  void _logout() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoginPage(),
+      ),
+      (Route<dynamic> route) => false,
+    );
+  }
+
+  // Function for navigating to Privacy and Agreement pages
+  void _navigateToPrivacy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PrivacyPolicyPage(),
+      ),
+    );
+  }
+
+  void _navigateToAgreement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AgreementPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -39,8 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Center(
               child: CircleAvatar(
                 radius: 60,
-                backgroundImage: NetworkImage(
-                    'https://via.placeholder.com/150'),
+                backgroundImage: NetworkImage('https://via.placeholder.com/150'),
               ),
             ),
             SizedBox(height: 10),
@@ -97,6 +128,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     );
                   }),
+                  Divider(),
+                  _buildInfoSection('Privacy Policy', Icons.privacy_tip, _navigateToPrivacy),
+                  Divider(),
+                  _buildInfoSection('Agreement', Icons.gavel, _navigateToAgreement),
+                  Divider(),
+                  _buildInfoSection('Logout', Icons.logout, _logout),
                   Divider(),
                 ],
               ),

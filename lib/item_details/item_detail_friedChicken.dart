@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:delivery_app/models/order.dart'; // Pastikan untuk mengimpor model Order
 import 'package:delivery_app/pages/cart_page.dart'; // Pastikan untuk mengimpor CartPage
 
-// Dummy data for Pizza
-final pizza = Product(
-  name: "Pizza Margherita",
-  description: "Pizza klasik dengan saus tomat, mozzarella, dan basil segar.",
-  imageUrl: "assets/pizza.jpeg",
-  price: 8.00,
-  rating: 4.7,
-  reviews: "500+ Rating",
-  discount: 20,
-  location: "Bandung, Indonesia",
+// Dummy data for Fried Chicken
+final friedChicken = Product(
+  name: "Ayam Goreng Krispi",
+  description: "Ayam goreng renyah dengan bumbu khas yang menggugah selera.",
+  imageUrl: "assets/fried.jpeg",
+  price: 6.50,
+  rating: 4.5,
+  reviews: "700+ Rating",
+  discount: 15,
+  location: "Surabaya, Indonesia",
 );
 
 class Product {
@@ -36,25 +36,25 @@ class Product {
   });
 }
 
-class ItemDetailPizza extends StatefulWidget {
+class ItemDetailFriedChicken extends StatefulWidget {
   final int itemID;
 
-  const ItemDetailPizza({super.key, required this.itemID});
+  const ItemDetailFriedChicken({super.key, required this.itemID});
 
   @override
-  _ItemDetailPizzaState createState() => _ItemDetailPizzaState();
+  _ItemDetailFriedChickenState createState() => _ItemDetailFriedChickenState();
 }
 
-class _ItemDetailPizzaState extends State<ItemDetailPizza> {
+class _ItemDetailFriedChickenState extends State<ItemDetailFriedChicken> {
   int quantity = 1;
   double deliveryFee = 3.00;
 
-  double get subtotal => pizza.price * quantity;
+  double get subtotal => friedChicken.price * quantity;
   double get payableTotal => subtotal + deliveryFee;
 
   void _confirmOrder() {
     Order newOrder = Order(
-      productName: pizza.name,
+      productName: friedChicken.name,
       quantity: quantity,
       total: payableTotal,
     );
@@ -73,7 +73,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
               const Text('Pesanan Anda telah berhasil dibuat!'),
               const SizedBox(height: 8),
               const Text('Detail pesanan:'),
-              Text('${pizza.name} x $quantity'),
+              Text('${friedChicken.name} x $quantity'),
               Text('Total: \$${payableTotal.toStringAsFixed(2)}'),
             ],
           ),
@@ -105,7 +105,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Pizza'),
+        title: const Text('Detail Ayam Goreng'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -116,7 +116,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
               Stack(
                 children: [
                   Image.asset(
-                    pizza.imageUrl,
+                    friedChicken.imageUrl,
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
@@ -131,7 +131,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        "${pizza.discount}% OFF",
+                        "${friedChicken.discount}% OFF",
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),
@@ -139,16 +139,16 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(pizza.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(friedChicken.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber),
                   const SizedBox(width: 4),
-                  Text("${pizza.rating} (${pizza.reviews})"),
+                  Text("${friedChicken.rating} (${friedChicken.reviews})"),
                 ],
               ),
               const SizedBox(height: 8),
-              Text("\$${pizza.price}", style: const TextStyle(fontSize: 20, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+              Text("\$${friedChicken.price}", style: const TextStyle(fontSize: 20, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -172,7 +172,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
                 children: [
                   const Icon(Icons.location_on, color: Colors.deepPurple),
                   const SizedBox(width: 8),
-                  Text(pizza.location),
+                  Text(friedChicken.location),
                 ],
               ),
               const SizedBox(height: 16),
