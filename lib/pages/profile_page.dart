@@ -1,25 +1,42 @@
 import 'package:delivery_app/pages/edit_profile_page.dart';
 import 'package:delivery_app/pages/login_page.dart';
-import 'package:delivery_app/pages/help_support_page.dart';
-import 'package:delivery_app/pages/privacy_policy_page.dart';  // Import Privacy Policy Page
-import 'package:delivery_app/pages/agreement_page.dart';       // Import Agreement Page
+import 'package:delivery_app/pages/privacy_policy_page.dart';
+import 'package:delivery_app/pages/agreement_page.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
 
 class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _name = 'John Doe';
-  String _email = 'john.doe@example.com';
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String _name = 'Daniel';
+  String _email = '';
 
-  // Function to edit profile
+  @override
+  void initState() {
+    super.initState();
+    _getUserData();
+  }
+
+  Future<void> _getUserData() async {
+    final User? user = _auth.currentUser;
+    setState(() {
+      _email = user?.email ?? 'No Email Found';
+      _name = user?.displayName ?? 'Daniel'; // Use displayName if available
+    });
+  }
+
+  // Edit profile function
   void _editProfile() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditProfilePage(),
+        builder: (context) => const EditProfilePage(),
       ),
     );
     if (result != null) {
@@ -30,18 +47,17 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Function to log out and navigate to the login page
-  void _logout() {
+  void _logout() async {
+    await _auth.signOut();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginPage(),
+        builder: (context) => const LoginPage(),
       ),
       (Route<dynamic> route) => false,
     );
   }
 
-  // Function for navigating to Privacy and Agreement pages
   void _navigateToPrivacy() {
     Navigator.push(
       context,
@@ -55,7 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AgreementPage(),
+        builder: (context) => const AgreementPage(),
       ),
     );
   }
@@ -63,81 +79,98 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.orange,
+        elevation: 5,
+        actions: [
+          TextButton(
+            onPressed: _editProfile,
+            child: const Text(
+              'Edit profile',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 20),
-            Center(
-              child: CircleAvatar(
-                radius: 60,
-                backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              _name,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 5),
-            Text(
-              _email,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ElevatedButton(
-                onPressed: _editProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.edit, color: Colors.white),
-                      SizedBox(width: 10),
-                      Text('Edit Profile', style: TextStyle(fontSize: 18)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 30),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 10),
+            Container(
+              color: Colors.yellow[100],
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              child: const Row(
                 children: [
-                  _buildInfoSection('Help & Support', Icons.help, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HelpSupportPage(),
-                      ),
-                    );
-                  }),
-                  Divider(),
-                  _buildInfoSection('Privacy Policy', Icons.privacy_tip, _navigateToPrivacy),
-                  Divider(),
-                  _buildInfoSection('Agreement', Icons.gavel, _navigateToAgreement),
-                  Divider(),
-                  _buildInfoSection('Logout', Icons.logout, _logout),
-                  Divider(),
+                  Icon(Icons.info, color: Colors.orange),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Lakukan verifikasi email agar akun lebih aman',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            const CircleAvatar(
+              radius: 40,
+              backgroundImage: AssetImage('assets/profile.png'),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _name,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              _email,
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+            const SizedBox(height: 5),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildCard('Hangry Point', '0 Poin', Icons.star),
+                _buildCard('Refund Wallet', 'Rp0', Icons.wallet),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.verified, color: Colors.red),
+              title: const Text('Verifikasi email kamu, yuk!'),
+              subtitle: const Text('Tekan untuk mengirimkan email'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {}, // Add functionality here
+            ),
+            const Divider(),
+            _buildInfoSection(
+                'Privacy Policy', Icons.privacy_tip, _navigateToPrivacy),
+            _buildInfoSection('Agreement', Icons.gavel, _navigateToAgreement),
+            _buildInfoSection('Logout', Icons.logout, _logout),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(String title, String subtitle, IconData icon) {
+    return Card(
+      elevation: 2,
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.orange, size: 30),
+            const SizedBox(height: 10),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            Text(subtitle,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
       ),
@@ -145,21 +178,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildInfoSection(String title, IconData icon, VoidCallback onTap) {
-    return InkWell(
+    return ListTile(
+      leading: Icon(icon, color: Colors.orange),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.orange),
-            SizedBox(width: 15),
-            Text(
-              title,
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

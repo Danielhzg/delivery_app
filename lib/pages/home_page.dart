@@ -3,7 +3,12 @@ import 'package:delivery_app/item_details/item_detail_burger.dart';
 import 'package:delivery_app/item_details/item_detail_kopi.dart';
 import 'package:delivery_app/item_details/item_detail_pizza.dart';
 import 'package:delivery_app/item_details/item_detail_friedChicken.dart';
+import 'package:delivery_app/pages/cart_page.dart';
+import 'package:delivery_app/pages/drink_page.dart';
 import 'package:flutter/material.dart';
+import 'package:delivery_app/pages/burger_page.dart';
+import 'package:delivery_app/pages/pizza_page.dart';
+import 'package:delivery_app/pages/rice_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -53,7 +58,7 @@ class _HomePageState extends State<HomePage> {
       theme: _isDarkTheme
           ? ThemeData.dark().copyWith(
               scaffoldBackgroundColor: Colors.black,
-              appBarTheme: AppBarTheme(backgroundColor: Colors.black),
+              appBarTheme: const AppBarTheme(backgroundColor: Colors.black),
             )
           : ThemeData.light().copyWith(
               scaffoldBackgroundColor: const Color(0xFFF4F6F9),
@@ -81,7 +86,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTopSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -112,14 +117,20 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               IconButton(
-                icon: Icon(
-                  _isDarkTheme ? Icons.wb_sunny : Icons.nightlight_round,
-                  color: Colors.grey[700],
-                ),
-                onPressed: _toggleTheme, // Panggil fungsi untuk mengganti tema
+              icon: const Icon(
+                Icons.shopping_cart, // Ganti ikon tema dengan ikon keranjang
+                color: Colors.grey,
               ),
-            ],
-          ),
+              onPressed: () {
+                // Navigasi ke halaman cart_page.dart
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CartPage()),
+                );
+              },
+            ),
+          ],
+        ),
           const SizedBox(height: 10),
           Container(
             height: 45,
@@ -149,7 +160,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildMenuSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 15.0 , vertical: 0.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -162,8 +173,33 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildMenuItem(String title, IconData icon, Color color) {
-    return Column(
+Widget _buildMenuItem(String title, IconData icon, Color color) {
+  return InkWell(
+    onTap: () {
+      if (title == 'Drink') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DrinkPage()),
+        );
+      } else if (title == 'Burger') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BurgerPage()),
+        );
+      } else if (title == 'Pizza') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PizzaPage()),
+        );
+      } else if (title == 'Rice') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RicePage()),
+        );
+      }
+      // Tambahkan navigasi lain untuk item lainnya jika diperlukan.
+    },
+    child: Column(
       children: [
         Container(
           height: 50,
@@ -183,8 +219,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPromoBannerSlider() {
     return Column(
@@ -302,21 +339,21 @@ class _HomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ItemDetailPizza(itemID: 2),
+                builder: (context) => const ItemDetailPizza(itemID: 2),
               ),
             );
           } else if (title == 'KOPI') {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ItemDetailKopi(itemID: 3),
+                builder: (context) => const ItemDetailKopi(itemID: 3),
               ),
             );
           } else if (title == 'FRIED CHICKEN') {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ItemDetailFriedChicken(itemID: 4),
+                builder: (context) => const ItemDetailFriedChicken(itemID: 4),
               ),
             );
           }
@@ -364,7 +401,7 @@ class _HomePageState extends State<HomePage> {
           'Unlimited Free Delivery on your first month!',
           style: TextStyle(
               fontSize: 16, color: Colors.orange, fontWeight: FontWeight.bold),
-        ),
+        ),  
       ),
     );
   }

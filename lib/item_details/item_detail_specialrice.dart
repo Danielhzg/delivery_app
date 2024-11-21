@@ -1,81 +1,82 @@
+
 import 'package:flutter/material.dart';
 import 'package:delivery_app/models/order.dart'; // Import model Order
 import 'package:delivery_app/models/product.dart'; // Import model Product
 import 'package:delivery_app/pages/cart_page.dart'; // Import CartPage
 
-// Dummy data for Burger
-final burger = Product(
-  id: "1",
-  name: "Burger Spesial",
-  description: "Burger juicy dengan daging segar dan sayuran crisp.",
-  imageUrl: "assets/burger.jpeg",
-  price: 7.50,
-  rating: 4.8,
-  reviews: "1k+ Rating",
-  discount: 10,
-  location: "Jakarta, Indonesia",
+// Dummy data for Special Rice
+final specialRice = Product(
+  id: "4",
+  name: "Special Rice",
+  description: "A special rice dish with a unique blend of spices and ingredients.",
+  imageUrl: "assets/specialRice.jpeg",
+  price: 8.00,
+  rating: 4.9,
+  reviews: "250+ Rating",
+  discount: 0,
+  location: "Bali, Indonesia",
 );
 
-class ItemDetailBurger extends StatefulWidget {
+class ItemDetailSpecialRice extends StatefulWidget {
   final int itemID;
 
-  const ItemDetailBurger({super.key, required this.itemID});
+  const ItemDetailSpecialRice({super.key, required this.itemID});
 
   @override
-  _ItemDetailBurgerState createState() => _ItemDetailBurgerState();
+  _ItemDetailSpecialRiceState createState() => _ItemDetailSpecialRiceState();
 }
 
-class _ItemDetailBurgerState extends State<ItemDetailBurger> {
+class _ItemDetailSpecialRiceState extends State<ItemDetailSpecialRice> {
   int quantity = 1;
-  double deliveryFee = 3.00;
+  double deliveryFee = 2.50;
 
-  double get subtotal => burger.price * quantity;
+  double get subtotal => specialRice.price * quantity;
   double get payableTotal => subtotal + deliveryFee;
 
   void _confirmOrder() {
     Order newOrder = Order(
-      productName: burger.name,
+      productName: specialRice.name,
       quantity: quantity,
       total: payableTotal,
-      unitPrice: burger.price, // Include unit price
-      imageUrl: burger.imageUrl,
+      unitPrice: specialRice.price,
+      imageUrl: specialRice.imageUrl,
     );
 
-    orders.add(newOrder); // Add order to global list
+    orders.add(newOrder);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Pesanan Berhasil'),
+          title: const Text('Order Successful'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Pesanan Anda telah berhasil dibuat!'),
+              const Text('Your order has been placed successfully!'),
               const SizedBox(height: 8),
-              const Text('Detail pesanan:'),
-              Text('${burger.name} x $quantity'),
+              const Text('Order details:'),
+              Text('${specialRice.name} x $quantity'),
               Text('Total: \$${payableTotal.toStringAsFixed(2)}'),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const CartPage()),
                 );
               },
-              child: const Text('Lihat Keranjang'),
+              child: const Text('View Cart'),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous page
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
-              child: const Text('Selesai'),
+              child: const Text('Done'),
             ),
           ],
         );
@@ -87,7 +88,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Burger'), // Update title
+        title: const Text('Special Rice Details'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -98,18 +99,18 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
               Stack(
                 children: [
                   Hero(
-                    tag: burger.id, // Add Hero widget
+                    tag: specialRice.id,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
-                        burger.imageUrl,
+                        specialRice.imageUrl,
                         width: double.infinity,
                         height: 250,
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  if (burger.discount > 0)
+                  if (specialRice.discount > 0)
                     Positioned(
                       top: 10,
                       left: 10,
@@ -121,7 +122,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          "${burger.discount}% OFF",
+                          "${specialRice.discount}% OFF",
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -129,7 +130,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(burger.name,
+              Text(specialRice.name,
                   style: const TextStyle(
                       fontSize: 28, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -137,17 +138,18 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 children: [
                   const Icon(Icons.star, color: Colors.amber),
                   const SizedBox(width: 4),
-                  Text("${burger.rating} (${burger.reviews})"),
+                  Text("${specialRice.rating} (${specialRice.reviews})"),
                 ],
               ),
               const SizedBox(height: 8),
-              Text("\$${burger.price}",
+              Text("\$${specialRice.price}",
                   style: const TextStyle(
                       fontSize: 24,
                       color: Colors.deepPurple,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              Text(burger.description, style: const TextStyle(fontSize: 16)),
+              Text(specialRice.description,
+                  style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -172,12 +174,12 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 children: [
                   const Icon(Icons.location_on, color: Colors.deepPurple),
                   const SizedBox(width: 8),
-                  Text(burger.location),
+                  Text(specialRice.location),
                 ],
               ),
               const SizedBox(height: 16),
               const Divider(),
-              const Text("Ringkasan Checkout",
+              const Text("Checkout Summary",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
@@ -190,7 +192,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Biaya Pengiriman"),
+                  const Text("Delivery Fee"),
                   Text("\$${deliveryFee.toStringAsFixed(2)}"),
                 ],
               ),
@@ -199,7 +201,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Total yang Harus Dibayar",
+                  const Text("Total Payable",
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   Text("\$${payableTotal.toStringAsFixed(2)}",
@@ -217,7 +219,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.orange),
                   onPressed: _confirmOrder,
-                  child: const Text("Konfirmasi Pesanan",
+                  child: const Text("Confirm Order",
                       style: TextStyle(color: Colors.white)),
                 ),
               ),

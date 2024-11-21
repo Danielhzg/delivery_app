@@ -3,45 +3,45 @@ import 'package:delivery_app/models/order.dart'; // Import model Order
 import 'package:delivery_app/models/product.dart'; // Import model Product
 import 'package:delivery_app/pages/cart_page.dart'; // Import CartPage
 
-// Dummy data for Burger
-final burger = Product(
-  id: "1",
-  name: "Burger Spesial",
-  description: "Burger juicy dengan daging segar dan sayuran crisp.",
-  imageUrl: "assets/burger.jpeg",
-  price: 7.50,
-  rating: 4.8,
-  reviews: "1k+ Rating",
-  discount: 10,
+// Dummy data for Iced Kopi
+final icedKopi = Product(
+  id: "2",
+  name: "Iced Kopi",
+  description: "Kopi dingin dengan es batu yang menyegarkan.",
+  imageUrl: "assets/icedKopi.jpg",
+  price: 4.00,
+  rating: 4.5,
+  reviews: "300+ Rating",
+  discount: 5,
   location: "Jakarta, Indonesia",
 );
 
-class ItemDetailBurger extends StatefulWidget {
+class ItemDetailIcedKopi extends StatefulWidget {
   final int itemID;
 
-  const ItemDetailBurger({super.key, required this.itemID});
+  const ItemDetailIcedKopi({super.key, required this.itemID});
 
   @override
-  _ItemDetailBurgerState createState() => _ItemDetailBurgerState();
+  _ItemDetailIcedKopiState createState() => _ItemDetailIcedKopiState();
 }
 
-class _ItemDetailBurgerState extends State<ItemDetailBurger> {
+class _ItemDetailIcedKopiState extends State<ItemDetailIcedKopi> {
   int quantity = 1;
-  double deliveryFee = 3.00;
+  double deliveryFee = 2.50;
 
-  double get subtotal => burger.price * quantity;
+  double get subtotal => icedKopi.price * quantity;
   double get payableTotal => subtotal + deliveryFee;
 
   void _confirmOrder() {
     Order newOrder = Order(
-      productName: burger.name,
+      productName: icedKopi.name,
       quantity: quantity,
       total: payableTotal,
-      unitPrice: burger.price, // Include unit price
-      imageUrl: burger.imageUrl,
+      unitPrice: icedKopi.price,
+      imageUrl: icedKopi.imageUrl,
     );
 
-    orders.add(newOrder); // Add order to global list
+    orders.add(newOrder);
 
     showDialog(
       context: context,
@@ -55,14 +55,14 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
               const Text('Pesanan Anda telah berhasil dibuat!'),
               const SizedBox(height: 8),
               const Text('Detail pesanan:'),
-              Text('${burger.name} x $quantity'),
+              Text('${icedKopi.name} x $quantity'),
               Text('Total: \$${payableTotal.toStringAsFixed(2)}'),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const CartPage()),
@@ -72,8 +72,8 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous page
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: const Text('Selesai'),
             ),
@@ -87,7 +87,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Burger'), // Update title
+        title: const Text('Detail Iced Kopi'), // Update title
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -98,18 +98,18 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
               Stack(
                 children: [
                   Hero(
-                    tag: burger.id, // Add Hero widget
+                    tag: icedKopi.id, // Add Hero widget
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
-                        burger.imageUrl,
+                        icedKopi.imageUrl,
                         width: double.infinity,
                         height: 250,
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  if (burger.discount > 0)
+                  if (icedKopi.discount > 0)
                     Positioned(
                       top: 10,
                       left: 10,
@@ -121,7 +121,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          "${burger.discount}% OFF",
+                          "${icedKopi.discount}% OFF",
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -129,7 +129,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(burger.name,
+              Text(icedKopi.name,
                   style: const TextStyle(
                       fontSize: 28, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -137,17 +137,17 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 children: [
                   const Icon(Icons.star, color: Colors.amber),
                   const SizedBox(width: 4),
-                  Text("${burger.rating} (${burger.reviews})"),
+                  Text("${icedKopi.rating} (${icedKopi.reviews})"),
                 ],
               ),
               const SizedBox(height: 8),
-              Text("\$${burger.price}",
+              Text("\$${icedKopi.price}",
                   style: const TextStyle(
                       fontSize: 24,
                       color: Colors.deepPurple,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              Text(burger.description, style: const TextStyle(fontSize: 16)),
+              Text(icedKopi.description, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -172,7 +172,7 @@ class _ItemDetailBurgerState extends State<ItemDetailBurger> {
                 children: [
                   const Icon(Icons.location_on, color: Colors.deepPurple),
                   const SizedBox(width: 8),
-                  Text(burger.location),
+                  Text(icedKopi.location),
                 ],
               ),
               const SizedBox(height: 16),

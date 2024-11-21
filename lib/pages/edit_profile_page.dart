@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
 class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+
   @override
   _EditProfilePageState createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  String _name = 'John Doe';
-  String _email = 'john.doe@example.com';
+  String _name = '';
+  String _email = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile'),
         backgroundColor: Colors.orange,
+        title: const Text('Edit Profile'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -23,10 +25,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           key: _formKey,
           child: Column(
             children: [
-              // Input nama
+              // Input name
               TextFormField(
                 initialValue: _name,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Name',
                   border: OutlineInputBorder(),
                 ),
@@ -42,11 +44,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   });
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // Input email
               TextFormField(
                 initialValue: _email,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
                 ),
@@ -62,8 +64,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   });
                 },
               ),
-              SizedBox(height: 20),
-              // Tombol simpan
+              const SizedBox(height: 20),
+              // Save button
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -77,8 +79,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 15),
                   child: Text('Save Changes', style: TextStyle(fontSize: 18)),
                 ),
               ),

@@ -69,7 +69,35 @@ flutter:
     - assets/login.png
     - assets/profile.png
     - assets/fried.jpeg
+    - assets/gopay.jpeg
+    - assets/ovo.jpeg
+    - assets/shopeepay.jpeg
+    - assets/cola.jpeg
+    - assets/icedKopi.jpg
+    - assets/orange.jpeg
+    - assets/milkshake.jpeg
+    - assets/lemonade.jpeg
+    - assets/hotKopi.png
+    - assets/milkTea.jpeg
+    - assets/ThaiTea.jpeg
+    - assets/doubleBurger.jpeg
+    - assets/cheeseBurger.jpeg
+    - assets/doubleBurger.jpeg
+    - assets/veggieBurger.jpeg
+    - assets/chickenBurger.jpeg
+    - assets/peperoni.jpeg
+    - assets/margeritha.jpeg
+    - assets/bbq.jpg
+    - assets/veggiepizza.jpeg
+    - assets/chickenrice.jpeg
+    - assets/noodlerice.jpeg
+    - assets/friedrice.jpeg
+    - assets/specialrice.jpeg
 
+
+
+
+  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

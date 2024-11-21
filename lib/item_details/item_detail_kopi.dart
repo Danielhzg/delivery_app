@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:delivery_app/models/order.dart'; // Pastikan untuk mengimpor model Order
-import 'package:delivery_app/pages/cart_page.dart'; // Pastikan untuk mengimpor CartPage
+import 'package:delivery_app/models/order.dart'; // Import model Order
+import 'package:delivery_app/models/product.dart'; // Import model Product
+import 'package:delivery_app/pages/cart_page.dart'; // Import CartPage
 
 // Dummy data for Kopi
 final kopi = Product(
+  id: "1", // Include an ID for the product
   name: "Kopi Seduh Istimewa",
   description: "Kopi seduh dengan aroma yang kaya dan cita rasa yang halus.",
   imageUrl: "assets/kopi.jpeg",
@@ -13,28 +15,6 @@ final kopi = Product(
   discount: 15,
   location: "Bandung, Indonesia",
 );
-
-class Product {
-  final String name;
-  final String description;
-  final String imageUrl;
-  final double price;
-  final double rating;
-  final String reviews;
-  final int discount;
-  final String location;
-
-  Product({
-    required this.name,
-    required this.description,
-    required this.imageUrl,
-    required this.price,
-    required this.rating,
-    required this.reviews,
-    required this.discount,
-    required this.location,
-  });
-}
 
 class ItemDetailKopi extends StatefulWidget {
   final int itemID;
@@ -57,9 +37,11 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
       productName: kopi.name,
       quantity: quantity,
       total: payableTotal,
+      unitPrice: kopi.price, // Include unit price here
+      imageUrl: kopi.imageUrl, // Include image URL for the order
     );
 
-    orders.add(newOrder); // Menambahkan pesanan ke daftar global
+    orders.add(newOrder); // Add order to global list
 
     showDialog(
       context: context,
@@ -80,7 +62,7 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
+                Navigator.of(context).pop(); // Close dialog
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const CartPage()),
@@ -90,8 +72,8 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to previous page
               },
               child: const Text('Selesai'),
             ),
@@ -105,7 +87,7 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Kopi'),
+        title: const Text('Detail Kopi'), // Update title
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -115,31 +97,42 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
             children: [
               Stack(
                 children: [
-                  Image.asset(
-                    kopi.imageUrl,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "${kopi.discount}% OFF",
-                        style: const TextStyle(color: Colors.white),
+                  Hero(
+                    tag: kopi.id, // Add Hero widget
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        kopi.imageUrl,
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
+                  if (kopi.discount > 0)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "${kopi.discount}% OFF",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 16),
-              Text(kopi.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(kopi.name,
+                  style: const TextStyle(
+                      fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber),
@@ -148,7 +141,13 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text("\$${kopi.price}", style: const TextStyle(fontSize: 20, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+              Text("\$${kopi.price}",
+                  style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.deepPurple,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Text(kopi.description, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -158,7 +157,8 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
                       if (quantity > 1) quantity--;
                     }),
                   ),
-                  Text(quantity.toString()),
+                  Text(quantity.toString(),
+                      style: const TextStyle(fontSize: 18)),
                   IconButton(
                     icon: const Icon(Icons.add),
                     onPressed: () => setState(() {
@@ -177,7 +177,8 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
               ),
               const SizedBox(height: 16),
               const Divider(),
-              const Text("Ringkasan Checkout", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Ringkasan Checkout",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -198,17 +199,26 @@ class _ItemDetailKopiState extends State<ItemDetailKopi> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Total yang Harus Dibayar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text("\$${payableTotal.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                  const Text("Total yang Harus Dibayar",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${payableTotal.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.deepPurple,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: Colors.orange),
+                  style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.orange),
                   onPressed: _confirmOrder,
-                  child: const Text("Konfirmasi Pesanan", style: TextStyle(color: Colors.white)),
+                  child: const Text("Konfirmasi Pesanan",
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-
 class AgreementPage extends StatelessWidget {
+  const AgreementPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Agreement'),
+        title: const Text('User Agreement'),
         backgroundColor: Colors.orange,
       ),
       body: Padding(
@@ -15,7 +16,7 @@ class AgreementPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'User Agreement',
                 style: TextStyle(
                   fontSize: 24,
@@ -23,28 +24,28 @@ class AgreementPage extends StatelessWidget {
                   color: Colors.orange,
                 ),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 'This agreement governs the use of our app. Please review it carefully to understand your rights and obligations.',
                 style: TextStyle(fontSize: 16, color: Colors.grey[700]),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               _buildSectionTitle('Acceptance of Terms'),
               _buildSectionContent(
                   'By using this app, you agree to the terms and conditions outlined here.'),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               _buildSectionTitle('User Responsibilities'),
               _buildSectionContent(
                   'Users must adhere to the guidelines and not misuse the services provided. Any form of abuse may lead to account suspension.'),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               _buildSectionTitle('Limitation of Liability'),
               _buildSectionContent(
                   'We are not liable for damages resulting from the use or inability to use our services.'),
-              SizedBox(height: 15),
+              const SizedBox(height: 15),
               _buildSectionTitle('Governing Law'),
               _buildSectionContent(
                   'This agreement is governed by the laws applicable in your jurisdiction.'),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Center(
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
@@ -54,7 +55,7 @@ class AgreementPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: Text('Back to Profile'),
+                  child: const Text('Back to Profile'),
                 ),
               ),
             ],
@@ -67,7 +68,7 @@ class AgreementPage extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
         color: Colors.black87,

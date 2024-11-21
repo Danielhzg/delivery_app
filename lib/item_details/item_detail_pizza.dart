@@ -1,40 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:delivery_app/models/order.dart'; // Pastikan untuk mengimpor model Order
-import 'package:delivery_app/pages/cart_page.dart'; // Pastikan untuk mengimpor CartPage
+import 'package:delivery_app/models/order.dart'; // Import model Order
+import 'package:delivery_app/models/product.dart'; // Import model Product
+import 'package:delivery_app/pages/cart_page.dart'; // Import CartPage
 
 // Dummy data for Pizza
 final pizza = Product(
+  id: "1", // Include an ID for the product
   name: "Pizza Margherita",
-  description: "Pizza klasik dengan saus tomat, mozzarella, dan basil segar.",
+  description:
+      "Pizza klasik dengan saus tomat, keju mozzarella, dan basil segar.",
   imageUrl: "assets/pizza.jpeg",
-  price: 8.00,
+  price: 8.50,
   rating: 4.7,
   reviews: "500+ Rating",
-  discount: 20,
+  discount: 10,
   location: "Bandung, Indonesia",
 );
-
-class Product {
-  final String name;
-  final String description;
-  final String imageUrl;
-  final double price;
-  final double rating;
-  final String reviews;
-  final int discount;
-  final String location;
-
-  Product({
-    required this.name,
-    required this.description,
-    required this.imageUrl,
-    required this.price,
-    required this.rating,
-    required this.reviews,
-    required this.discount,
-    required this.location,
-  });
-}
 
 class ItemDetailPizza extends StatefulWidget {
   final int itemID;
@@ -57,9 +38,11 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
       productName: pizza.name,
       quantity: quantity,
       total: payableTotal,
+      unitPrice: pizza.price, // Include unit price here
+      imageUrl: pizza.imageUrl, // Include image URL for the order
     );
 
-    orders.add(newOrder); // Menambahkan pesanan ke daftar global
+    orders.add(newOrder); // Add order to global list
 
     showDialog(
       context: context,
@@ -80,7 +63,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
+                Navigator.of(context).pop(); // Close dialog
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const CartPage()),
@@ -90,8 +73,8 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog
-                Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Go back to previous page
               },
               child: const Text('Selesai'),
             ),
@@ -105,7 +88,7 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Pizza'),
+        title: const Text('Detail Pizza'), // Update title
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -115,31 +98,42 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
             children: [
               Stack(
                 children: [
-                  Image.asset(
-                    pizza.imageUrl,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "${pizza.discount}% OFF",
-                        style: const TextStyle(color: Colors.white),
+                  Hero(
+                    tag: pizza.id, // Add Hero widget
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        pizza.imageUrl,
+                        width: double.infinity,
+                        height: 250,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
+                  if (pizza.discount > 0)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "${pizza.discount}% OFF",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 16),
-              Text(pizza.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(pizza.name,
+                  style: const TextStyle(
+                      fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(Icons.star, color: Colors.amber),
@@ -148,7 +142,13 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text("\$${pizza.price}", style: const TextStyle(fontSize: 20, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+              Text("\$${pizza.price}",
+                  style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.deepPurple,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Text(pizza.description, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -158,7 +158,8 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
                       if (quantity > 1) quantity--;
                     }),
                   ),
-                  Text(quantity.toString()),
+                  Text(quantity.toString(),
+                      style: const TextStyle(fontSize: 18)),
                   IconButton(
                     icon: const Icon(Icons.add),
                     onPressed: () => setState(() {
@@ -177,7 +178,8 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
               ),
               const SizedBox(height: 16),
               const Divider(),
-              const Text("Ringkasan Checkout", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Ringkasan Checkout",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -198,17 +200,26 @@ class _ItemDetailPizzaState extends State<ItemDetailPizza> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Total yang Harus Dibayar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text("\$${payableTotal.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                  const Text("Total yang Harus Dibayar",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${payableTotal.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.deepPurple,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: Colors.orange),
+                  style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.orange),
                   onPressed: _confirmOrder,
-                  child: const Text("Konfirmasi Pesanan", style: TextStyle(color: Colors.white)),
+                  child: const Text("Konfirmasi Pesanan",
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],

@@ -1,13 +1,17 @@
 // order.dart
 class Order {
-  final String productName;
-  final int quantity;
-  final double total;
+  String productName;
+  int quantity;
+  double total;
+  double unitPrice; // Price per unit
+  String imageUrl;
 
   Order({
     required this.productName,
     required this.quantity,
     required this.total,
+    required this.unitPrice,
+    required this.imageUrl,
   });
 }
 
