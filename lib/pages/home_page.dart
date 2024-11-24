@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() {
   runApp(const MyApp());
@@ -183,22 +184,31 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMenuSection() {
-    final menuItems = [
-      ('Pizza', Icons.local_pizza, const Color(0xFFFF9800)),
-      ('Burger', Icons.fastfood, const Color(0xFFFB8C00)),
-      ('Drink', Icons.local_drink, const Color(0xFFF57C00)),
-      ('Rice', Icons.rice_bowl, const Color(0xFFF57C00)),
-    ];
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('menu').where('category',
+          whereIn: ['Pizza', 'Burger', 'Drink', 'Rice']).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
 
-    return Container(
-      color: const Color(0xFFFFF3E0), // Menu section background
-      margin: const EdgeInsets.symmetric(vertical: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: menuItems
-            .map((item) => _buildMenuItem(item.$1, item.$2, item.$3))
-            .toList(),
-      ),
+        final menuItems = snapshot.data!.docs
+            .map((doc) =>
+                MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+            .toList();
+
+        return Container(
+          color: const Color(0xFFFFF3E0),
+          margin: const EdgeInsets.symmetric(vertical: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: menuItems
+                .map((item) => _buildMenuItem(
+                    item.name, Icons.restaurant, const Color(0xFFFF9800)))
+                .toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -326,40 +336,54 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPopularItemsSection() {
-    final popularItems = [
-      ('assets/burger.jpeg', 'BURGER', '1'),
-      ('assets/pizza.jpeg', 'PIZZA', '2'),
-      ('assets/kopi.jpeg', 'COFFEE', '3'),
-      ('assets/fried.jpeg', 'FRIED CHICKEN', '4'),
-    ];
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('menu')
+          .where('isPopular', isEqualTo: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Popular Items',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFE65100),
-            ),
+        final popularItems = snapshot.data!.docs
+            .map((doc) =>
+                MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+            .toList();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Popular Items',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFE65100),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 250,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: popularItems.length,
+                  itemBuilder: (context, index) {
+                    final item = popularItems[index];
+                    return _buildPopularItemCard(
+                      item.imageUrl,
+                      item.name,
+                      item.id,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 250, // Increased height to prevent overflow
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: popularItems.length,
-              itemBuilder: (context, index) {
-                final item = popularItems[index];
-                return _buildPopularItemCard(item.$1, item.$2, item.$3);
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -503,6 +527,22 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class MenuItem {
+  final String id;
+  final String name;
+  final String imageUrl;
+
+  MenuItem({required this.id, required this.name, required this.imageUrl});
+
+  factory MenuItem.fromMap(String id, Map<String, dynamic> data) {
+    return MenuItem(
+      id: id,
+      name: data['name'],
+      imageUrl: data['imageUrl'],
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:delivery_app/main.dart';
+import 'package:delivery_app/pages/admin_page.dart';
+import 'package:delivery_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,33 +17,84 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
   Future<void> _signIn() async {
+    // Validate inputs first
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      await _showErrorDialog(
+        title: 'Validation Error',
+        message: 'Please enter both email and password.',
+      );
+      return;
+    }
+
+    if (!_isValidEmail(_emailController.text.trim())) {
+      await _showErrorDialog(
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address.',
+      );
+      return;
+    }
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      if (!mounted) return;
+
+      // Check if user document exists
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        // Create user document if it doesn't exist
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'email': _emailController.text.trim(),
+          'isAdmin': false,
+          'createdAt': Timestamp.now(),
+        });
+      }
+
+      final isAdmin = userDoc.data()?['isAdmin'] ?? false;
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+        MaterialPageRoute(
+          builder: (context) => isAdmin ? const AdminPage() : const MainPage(),
+        ),
       );
 
       _showTopNotification('Login successful!');
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found' ||
-          e.code == 'invalid-email' ||
-          e.code == 'wrong-password') {
-        await _showErrorDialog(
-          title: 'Login Failed',
-          message: 'Check your email or your password.',
-        );
-      } else {
-        await _showErrorDialog(
-          title: 'Login Failed',
-          message: 'An error occurred: ${e.message}. Please try again later.',
-        );
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          message = 'Wrong password provided.';
+          break;
+        case 'invalid-email':
+          message = 'The email address is badly formatted.';
+          break;
+        case 'user-disabled':
+          message = 'This user account has been disabled.';
+          break;
+        default:
+          message = 'Login error: ${e.message}';
       }
+      await _showErrorDialog(title: 'Login Failed', message: message);
     } catch (e) {
       await _showErrorDialog(
         title: 'Unexpected Error',
@@ -116,7 +170,8 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 40),
                 // Wrap email and password fields in a SizedBox to set a consistent width
                 SizedBox(
-                  width: double.infinity, // Makes the fields take up all available width
+                  width: double
+                      .infinity, // Makes the fields take up all available width
                   child: TextField(
                     controller: _emailController,
                     decoration: InputDecoration(
@@ -133,7 +188,8 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
-                  width: double.infinity, // Makes the fields take up all available width
+                  width: double
+                      .infinity, // Makes the fields take up all available width
                   child: TextField(
                     controller: _passwordController,
                     decoration: InputDecoration(
@@ -175,7 +231,8 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => RegisterPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const RegisterPage()),
                     );
                   },
                   child: Text(
