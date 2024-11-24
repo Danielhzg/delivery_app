@@ -1,14 +1,43 @@
 import 'dart:async';
-import 'package:delivery_app/item_details/item_detail_burger.dart';
-import 'package:delivery_app/item_details/item_detail_kopi.dart';
-import 'package:delivery_app/item_details/item_detail_pizza.dart';
-import 'package:delivery_app/item_details/item_detail_friedChicken.dart';
-import 'package:delivery_app/pages/cart_page.dart';
-import 'package:delivery_app/pages/drink_page.dart';
 import 'package:flutter/material.dart';
-import 'package:delivery_app/pages/burger_page.dart';
-import 'package:delivery_app/pages/pizza_page.dart';
-import 'package:delivery_app/pages/rice_page.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Spoon Kitchen',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFFF9800),
+          primary: const Color(0xFFFF9800),
+          secondary: const Color(0xFFFFB74D),
+          tertiary: const Color(0xFFFFCC80),
+          background: const Color(0xFFFFF3E0),
+          surface: const Color(0xFFFFE0B2),
+        ),
+        scaffoldBackgroundColor:
+            const Color(0xFFFFF3E0), // Main background color
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFFF9800),
+          foregroundColor: Colors.white,
+        ),
+        textTheme: const TextTheme(
+          headlineMedium: TextStyle(color: Color(0xFFE65100)),
+          bodyLarge: TextStyle(color: Color(0xFFF57C00)),
+          bodyMedium: TextStyle(color: Color(0xFFFF9800)),
+        ),
+      ),
+      home: const HomePage(),
+    );
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,15 +50,20 @@ class _HomePageState extends State<HomePage> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
   Timer? _timer;
-  bool _isDarkTheme = false; // Variabel untuk tema
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      setState(() {
-        _currentPage = (_currentPage + 1) % 2;
-      });
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (_currentPage < 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
       _pageController.animateToPage(
         _currentPage,
         duration: const Duration(milliseconds: 350),
@@ -45,38 +79,20 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // Fungsi untuk mengganti tema
-  void _toggleTheme() {
-    setState(() {
-      _isDarkTheme = !_isDarkTheme;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: _isDarkTheme
-          ? ThemeData.dark().copyWith(
-              scaffoldBackgroundColor: Colors.black,
-              appBarTheme: const AppBarTheme(backgroundColor: Colors.black),
-            )
-          : ThemeData.light().copyWith(
-              scaffoldBackgroundColor: const Color(0xFFF4F6F9),
-            ),
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTopSection(),
-              const SizedBox(height: 16),
-              _buildMenuSection(),
-              const SizedBox(height: 16),
-              _buildPromoBannerSlider(),
-              const SizedBox(height: 16),
-              _buildPopularItemsSection(),
-              const SizedBox(height: 16),
-              _buildFreeDeliveryBanner(),
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF3E0), // Explicit background color
+      body: SafeArea(
+        child: Container(
+          color: const Color(0xFFFFF3E0), // Container background
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: _buildTopSection()),
+              SliverToBoxAdapter(child: _buildMenuSection()),
+              SliverToBoxAdapter(child: _buildPromoBannerSlider()),
+              SliverToBoxAdapter(child: _buildPopularItemsSection()),
+              SliverToBoxAdapter(child: _buildFreeDeliveryBanner()),
             ],
           ),
         ),
@@ -85,8 +101,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTopSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 40.0),
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF9800).withOpacity(0.2),
+            spreadRadius: 5,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -97,60 +132,49 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   CircleAvatar(
                     backgroundImage: AssetImage('assets/profile.png'),
-                    radius: 15,
+                    radius: 24,
                   ),
-                  SizedBox(width: 10),
+                  SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Hello, Daniel',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
                       Text(
                         'Welcome to Spoon Kitchen',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
               IconButton(
-              icon: const Icon(
-                Icons.shopping_cart, // Ganti ikon tema dengan ikon keranjang
-                color: Colors.grey,
+                icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                onPressed: () {
+                  // Navigate to cart page
+                },
               ),
-              onPressed: () {
-                // Navigasi ke halaman cart_page.dart
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CartPage()),
-                );
-              },
-            ),
-          ],
-        ),
-          const SizedBox(height: 10),
-          Container(
-            height: 45,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Search your food',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                Icon(Icons.filter_list, color: Colors.grey),
-              ],
+            ],
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search your food',
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              suffixIcon: const Icon(Icons.filter_list, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ],
@@ -159,128 +183,278 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMenuSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0 , vertical: 0.0),
+    final menuItems = [
+      ('Pizza', Icons.local_pizza, const Color(0xFFFF9800)),
+      ('Burger', Icons.fastfood, const Color(0xFFFB8C00)),
+      ('Drink', Icons.local_drink, const Color(0xFFF57C00)),
+      ('Rice', Icons.rice_bowl, const Color(0xFFF57C00)),
+    ];
+
+    return Container(
+      color: const Color(0xFFFFF3E0), // Menu section background
+      margin: const EdgeInsets.symmetric(vertical: 24),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: menuItems
+            .map((item) => _buildMenuItem(item.$1, item.$2, item.$3))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, IconData icon, Color color) {
+    return InkWell(
+      onTap: () {
+        // Navigate to respective page
+      },
+      child: Column(
         children: [
-          _buildMenuItem('Pizza', Icons.local_pizza, Colors.orange),
-          _buildMenuItem('Burger', Icons.fastfood, Colors.orange),
-          _buildMenuItem('Drink', Icons.local_drink, Colors.orange),
-          _buildMenuItem('Rice', Icons.rice_bowl, Colors.orange),
+          Container(
+            height: 70,
+            width: 70,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, color: color, size: 35),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
 
-Widget _buildMenuItem(String title, IconData icon, Color color) {
-  return InkWell(
-    onTap: () {
-      if (title == 'Drink') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const DrinkPage()),
-        );
-      } else if (title == 'Burger') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const BurgerPage()),
-        );
-      } else if (title == 'Pizza') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PizzaPage()),
-        );
-      } else if (title == 'Rice') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RicePage()),
-        );
-      }
-      // Tambahkan navigasi lain untuk item lainnya jika diperlukan.
-    },
-    child: Column(
-      children: [
-        Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: color, size: 28),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          title,
-          style: TextStyle(
-            color: color == Colors.green ? Colors.green : Colors.black,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
   Widget _buildPromoBannerSlider() {
+    final promos = [
+      ('assets/burger.jpeg', 'BURGER', "Today's Hot Offer"),
+      ('assets/pizza.jpeg', 'PIZZA', 'Get it now with 10% off'),
+    ];
+
     return Column(
       children: [
-        Container(
+        SizedBox(
           height: 200,
-          margin: const EdgeInsets.all(16),
-          child: PageView(
+          child: PageView.builder(
             controller: _pageController,
+            itemCount: promos.length,
+            itemBuilder: (context, index) {
+              final promo = promos[index];
+              return _buildPromoBanner(promo.$1, promo.$2, promo.$3);
+            },
             onPageChanged: (int page) {
               setState(() {
                 _currentPage = page;
               });
             },
-            children: [
-              _buildPromoBanner(
-                  'assets/burger.jpeg', 'BURGER', 'Today\'s Hot offer'),
-              _buildPromoBanner(
-                  'assets/pizza.jpeg', 'PIZZA', 'Get it now with 10% off'),
-            ],
           ),
         ),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-              2, (index) => _buildIndicator(index == _currentPage)),
+            promos.length,
+            (index) => _buildIndicator(index == _currentPage),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildPromoBanner(String imagePath, String title, String subtitle) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: Stack(
-        children: [
-          Image.asset(imagePath, fit: BoxFit.cover, width: double.infinity),
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.black45, Colors.transparent],
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        image: DecorationImage(
+          image: AssetImage(imagePath),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 28,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIndicator(bool isActive) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      height: 8,
+      width: 8,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFE65100) : const Color(0xFFFFCC80),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildPopularItemsSection() {
+    final popularItems = [
+      ('assets/burger.jpeg', 'BURGER', '1'),
+      ('assets/pizza.jpeg', 'PIZZA', '2'),
+      ('assets/kopi.jpeg', 'COFFEE', '3'),
+      ('assets/fried.jpeg', 'FRIED CHICKEN', '4'),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Popular Items',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFE65100),
             ),
           ),
-          Positioned(
-            bottom: 20,
-            left: 20,
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 250, // Increased height to prevent overflow
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: popularItems.length,
+              itemBuilder: (context, index) {
+                final item = popularItems[index];
+                return _buildPopularItemCard(item.$1, item.$2, item.$3);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPopularItemCard(String imagePath, String title, String itemId) {
+    return Container(
+      width: 180,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.white, // Card background back to white
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF9800).withOpacity(0.15),
+            spreadRadius: 2,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            child: Stack(
+              children: [
+                Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  height: 130,
+                  width: double.infinity,
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0).withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      Icons.favorite_border,
+                      color: Color(0xFFFF9800),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold)),
-                Text(subtitle,
-                    style: const TextStyle(fontSize: 16, color: Colors.white)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFE65100),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Item #$itemId',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFFFF9800),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9800).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Popular',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF9800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -289,119 +463,45 @@ Widget _buildMenuItem(String title, IconData icon, Color color) {
     );
   }
 
-  Widget _buildIndicator(bool isActive) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      height: 8,
-      width: 8,
-      decoration: BoxDecoration(
-        color: isActive ? Colors.orange : Colors.grey,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  Widget _buildPopularItemsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Popular Items',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildPopularItemCard('assets/burger.jpeg', 'BURGER', '1'),
-              _buildPopularItemCard('assets/pizza.jpeg', 'PIZZA', '2'),
-              _buildPopularItemCard('assets/kopi.jpeg', 'KOPI', '3'),
-              _buildPopularItemCard('assets/fried.jpeg', 'FRIED CHICKEN', '4'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPopularItemCard(String imagePath, String title, String itemId) {
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          if (title == 'BURGER') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ItemDetailBurger(itemID: 1),
-              ),
-            );
-          } else if (title == 'PIZZA') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ItemDetailPizza(itemID: 2),
-              ),
-            );
-          } else if (title == 'KOPI') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ItemDetailKopi(itemID: 3),
-              ),
-            );
-          } else if (title == 'FRIED CHICKEN') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ItemDetailFriedChicken(itemID: 4),
-              ),
-            );
-          }
-        },
-        child: Container(
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                spreadRadius: 2,
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Image.asset(imagePath, fit: BoxFit.cover, height: 130),
-              ),
-              const SizedBox(height: 8),
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFreeDeliveryBanner() {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
-        borderRadius: BorderRadius.circular(15),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFE65100),
+            Color(0xFFFF9800),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF9800).withOpacity(0.3),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: const Center(
-        child: Text(
-          'Unlimited Free Delivery on your first month!',
-          style: TextStyle(
-              fontSize: 16, color: Colors.orange, fontWeight: FontWeight.bold),
-        ),  
+      child: const Row(
+        children: [
+          Icon(Icons.local_shipping, color: Colors.white, size: 48),
+          SizedBox(width: 20),
+          Expanded(
+            child: Text(
+              'Unlimited Free Delivery on your first month!',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
