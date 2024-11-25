@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../constants/categories.dart';
+import 'category_menu_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -184,49 +186,64 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMenuSection() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('menu').where('category',
-          whereIn: ['Pizza', 'Burger', 'Drink', 'Rice']).snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const CircularProgressIndicator();
-        }
-
-        final menuItems = snapshot.data!.docs
-            .map((doc) =>
-                MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList();
-
-        return Container(
-          color: const Color(0xFFFFF3E0),
-          margin: const EdgeInsets.symmetric(vertical: 24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: menuItems
-                .map((item) => _buildMenuItem(
-                    item.name, Icons.restaurant, const Color(0xFFFF9800)))
-                .toList(),
-          ),
-        );
-      },
+    return Container(
+      color: const Color(0xFFFFF3E0),
+      margin: const EdgeInsets.symmetric(vertical: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: menuCategories.map((category) {
+          return _buildMenuItem(
+            category['name'],
+            category['icon'],
+            const Color(0xFFFF9800),
+          );
+        }).toList(),
+      ),
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'pizza':
+        return Icons.local_pizza;
+      case 'burger':
+        return Icons.lunch_dining;
+      case 'drink':
+        return Icons.local_drink;
+      case 'rice':
+        return Icons.rice_bowl;
+      default:
+        return Icons.restaurant;
+    }
   }
 
   Widget _buildMenuItem(String title, IconData icon, Color color) {
     return InkWell(
       onTap: () {
-        // Navigate to respective page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryMenuPage(
+              category: title,
+              categoryIcon: icon,
+            ),
+          ),
+        );
       },
       child: Column(
         children: [
-          Container(
-            height: 70,
-            width: 70,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(icon, color: color, size: 35),
+          Stack(
+            children: [
+              Container(
+                height: 70,
+                width: 70,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(icon, color: color, size: 35),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
@@ -535,14 +552,30 @@ class MenuItem {
   final String id;
   final String name;
   final String imageUrl;
+  final String category;
+  final double price;
+  final bool isPopular;
+  final String description;
 
-  MenuItem({required this.id, required this.name, required this.imageUrl});
+  MenuItem({
+    required this.id,
+    required this.name,
+    required this.imageUrl,
+    required this.category,
+    required this.price,
+    this.isPopular = false,
+    this.description = '',
+  });
 
   factory MenuItem.fromMap(String id, Map<String, dynamic> data) {
     return MenuItem(
       id: id,
-      name: data['name'],
-      imageUrl: data['imageUrl'],
+      name: data['name'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      category: data['category'] ?? '',
+      price: (data['price'] ?? 0).toDouble(),
+      isPopular: data['isPopular'] ?? false,
+      description: data['description'] ?? '',
     );
   }
 }

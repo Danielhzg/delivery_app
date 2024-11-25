@@ -13,8 +13,8 @@ class MenuItem {
     required this.category,
     required this.imageUrl,
     required this.price,
-    this.isPopular = false,
-    this.description = '',
+    required this.isPopular,
+    required this.description,
   });
 
   Map<String, dynamic> toMap() {
@@ -28,15 +28,15 @@ class MenuItem {
     };
   }
 
-  factory MenuItem.fromMap(String id, Map<String, dynamic> map) {
+  factory MenuItem.fromMap(String id, Map<String, dynamic> data) {
     return MenuItem(
       id: id,
-      name: map['name'] ?? '',
-      category: map['category'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      price: map['price']?.toDouble() ?? 0.0,
-      isPopular: map['isPopular'] ?? false,
-      description: map['description'] ?? '',
+      name: data['name'] ?? '',
+      category: data['category'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      price: (data['price'] ?? 0.0).toDouble(),
+      isPopular: data['isPopular'] ?? false,
+      description: data['description'] ?? '',
     );
   }
 }
