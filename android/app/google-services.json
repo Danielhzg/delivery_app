@@ -2,9 +2,28 @@
   "project_info": {
     "project_number": "395019409667",
     "project_id": "proyekdelivery",
-    "storage_bucket": "proyekdelivery.appspot.com"
+    "storage_bucket": "proyekdelivery.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395019409667:android:5a272e25caeee8198e3136",
+        "android_client_info": {
+          "package_name": "com.example.d"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd0x2b4-WUpq1VxDGTICDV-vq2gHg41do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:395019409667:android:17ba6bc8db7035178e3136",

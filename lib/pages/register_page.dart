@@ -35,14 +35,50 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  Future<void> _showVerificationInstructions() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Verify Your Email',
+            style: TextStyle(color: Colors.orange)),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Registration successful! Please verify your email:'),
+            SizedBox(height: 10),
+            Text('1. Check your email inbox'),
+            Text('2. Click the verification link'),
+            Text('3. Return to the app and login'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              );
+            },
+            child: const Text('OK', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _register() async {
     try {
-      // Create the user in Firebase Auth
       final UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+
+      // Send email verification
+      await userCredential.user!.sendEmailVerification();
 
       // Create user document in Firestore
       await FirebaseFirestore.instance
@@ -50,19 +86,13 @@ class _RegisterPageState extends State<RegisterPage> {
           .doc(userCredential.user!.uid)
           .set({
         'email': emailController.text.trim(),
-        'isAdmin': false, // Default to regular user
+        'isAdmin': false,
         'createdAt': Timestamp.now(),
+        'emailVerified': false,
       });
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! Please login.')),
-      );
+      await _showVerificationInstructions();
     } on FirebaseAuthException catch (e) {
       String message;
       if (e.code == 'weak-password') {
@@ -74,6 +104,13 @@ class _RegisterPageState extends State<RegisterPage> {
       }
       _showErrorDialog('Registration Error', message);
     }
+  }
+
+  bool _isPasswordStrong(String password) {
+    return password.length >= 8 &&
+        RegExp(r'[A-Z]').hasMatch(password) &&
+        RegExp(r'[0-9]').hasMatch(password) &&
+        RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
   }
 
   @override
@@ -144,8 +181,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
-                      } else if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
+                      } else if (!_isPasswordStrong(value)) {
+                        return 'Password must be at least 8 characters long and contain uppercase, number, and special character';
                       }
                       return null;
                     },

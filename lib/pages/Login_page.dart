@@ -21,6 +21,58 @@ class _LoginPageState extends State<LoginPage> {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
+  Future<void> _sendEmailVerification() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      await user?.sendEmailVerification();
+      _showTopNotification('Verification email sent! Please check your inbox.');
+    } catch (e) {
+      await _showErrorDialog(
+        title: 'Error',
+        message: 'Could not send verification email. Please try again later.',
+      );
+    }
+  }
+
+  Future<void> _showVerificationDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Email Verification Required',
+            style: TextStyle(color: Colors.orange)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Please verify your email address to continue.'),
+            const SizedBox(height: 10),
+            const Text('1. Check your email inbox'),
+            const Text('2. Click the verification link'),
+            const Text('3. Then try logging in again'),
+            const SizedBox(height: 16),
+            const Text('Didn\'t receive the email?'),
+            TextButton(
+              onPressed: () async {
+                await _sendEmailVerification();
+                if (!mounted) return;
+                Navigator.of(context).pop();
+                _showTopNotification('New verification email sent!');
+              },
+              child: const Text('Resend Verification Email'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _signIn() async {
     // Validate inputs first
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -47,6 +99,12 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
+
+      // Check if email is verified
+      if (!userCredential.user!.emailVerified) {
+        await _showVerificationDialog();
+        return;
+      }
 
       // Check if user document exists
       final userDoc = await FirebaseFirestore.instance
@@ -91,6 +149,9 @@ class _LoginPageState extends State<LoginPage> {
         case 'user-disabled':
           message = 'This user account has been disabled.';
           break;
+        case 'invalid-credential':
+          message = 'Please check your email and password and try again.';
+          break;
         default:
           message = 'Login error: ${e.message}';
       }
@@ -99,6 +160,29 @@ class _LoginPageState extends State<LoginPage> {
       await _showErrorDialog(
         title: 'Unexpected Error',
         message: 'An unexpected error occurred. Please try again later.',
+      );
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_isValidEmail(_emailController.text.trim())) {
+      await _showErrorDialog(
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address first.',
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailController.text.trim(),
+      );
+      if (!mounted) return;
+      _showTopNotification('Password reset email sent!');
+    } on FirebaseAuthException catch (e) {
+      await _showErrorDialog(
+        title: 'Reset Password Failed',
+        message: e.message ?? 'Could not send reset email.',
       );
     }
   }
@@ -237,6 +321,14 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: Text(
                     'Don\'t have an account? Register',
+                    style: TextStyle(color: Colors.orange[700]),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: _resetPassword,
+                  child: Text(
+                    'Forgot Password?',
                     style: TextStyle(color: Colors.orange[700]),
                   ),
                 ),
