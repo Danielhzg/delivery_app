@@ -1,0 +1,3 @@
+
+platform :ios, '11.0'  # Add/update this line at the top
+# ...existing code...

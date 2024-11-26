@@ -66,10 +66,6 @@ class _LoginCheckState extends State<LoginCheck> {
   @override
   Widget build(BuildContext context) {
     // Memastikan status login sudah diproses
-    if (_isLoggedIn == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return _isLoggedIn ? const MainPage() : const LoginPage();
   }
 }
@@ -85,9 +81,9 @@ class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
   final List<Widget> _pages = [
     const HomePage(),
-    CartPage(), // Hanya memanggil constructor tanpa parameter Passing empty list for CartPage as placeholder
-    CommentPage(),
-    ProfilePage(),
+    const CartPage(), // Hanya memanggil constructor tanpa parameter Passing empty list for CartPage as placeholder
+    const CommentPage(),
+    const ProfilePage(),
   ];
 
   @override

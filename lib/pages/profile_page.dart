@@ -4,6 +4,11 @@ import 'package:delivery_app/pages/privacy_policy_page.dart';
 import 'package:delivery_app/pages/agreement_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore
+import 'dart:async'; // For StreamSubscription
+import 'dart:io'; // For File
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert'; // For base64 encoding
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,7 +19,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String _name = 'Daniel';
+  String _name = '';
   String _email = '';
 
   @override
@@ -25,10 +30,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _getUserData() async {
     final User? user = _auth.currentUser;
-    setState(() {
-      _email = user?.email ?? 'No Email Found';
-      _name = user?.displayName ?? 'Daniel'; // Use displayName if available
-    });
+    if (user != null) {
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        _name = userData.data()?['name'] ?? 'User';
+        _email = user.email ?? 'No Email Found';
+      });
+    }
   }
 
   // Edit profile function
@@ -40,10 +52,8 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
     if (result != null) {
-      setState(() {
-        _name = result['name'];
-        _email = result['email'];
-      });
+      // Trigger reload of user data after edit
+      _getUserData();
     }
   }
 
@@ -74,6 +84,160 @@ class _ProfilePageState extends State<ProfilePage> {
         builder: (context) => const AgreementPage(),
       ),
     );
+  }
+
+  Widget _buildProfileImage(String? base64Image) {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: base64Image != null && base64Image.isNotEmpty
+            ? Image.memory(
+                base64Decode(base64Image),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.person_rounded,
+                    size: 60,
+                    color: const Color(0xFFFF9800).withOpacity(0.7),
+                  );
+                },
+              )
+            : Icon(
+                Icons.person_rounded,
+                size: 60,
+                color: const Color(0xFFFF9800).withOpacity(0.7),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _sendVerificationEmail() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent! Please check your inbox.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send verification email. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _checkEmailVerification() async {
+    await _auth.currentUser?.reload();
+    setState(() {});
+  }
+
+  Future<void> _handleEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Reload user to get current verification status
+        await user.reload();
+
+        if (user.emailVerified) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email is already verified'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Verify Email'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('We will send a verification email to:'),
+                  Text(user.email ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  const Text(
+                      'After clicking the link in the email, click Check Status to confirm verification.'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await user.sendEmailVerification();
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Verification email sent! Please check your inbox.'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
+                  child: const Text('Send Email'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await user.reload();
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    if (user.emailVerified) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Email verified successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Email not yet verified. Please check your inbox and click the verification link.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Check Status'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to verify email. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -128,84 +292,55 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            spreadRadius: 2,
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Icon(
-                            Icons.person_rounded,
-                            size: 60,
-                            color: const Color(0xFFFF9800).withOpacity(0.7),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFFF9800).withOpacity(0.3),
-                                width: 3,
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(FirebaseAuth.instance.currentUser?.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data != null) {
+                          final userData =
+                              snapshot.data!.data() as Map<String, dynamic>? ??
+                                  {};
+                          final String? base64Image =
+                              userData['profilePicture'] as String?;
+                          final String firstName =
+                              userData['firstName']?.toString() ?? 'New';
+                          final String lastName =
+                              userData['lastName']?.toString() ?? 'User';
+
+                          return Column(
+                            children: [
+                              _buildProfileImage(base64Image),
+                              const SizedBox(height: 15),
+                              Text(
+                                '$firstName $lastName',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 5),
+                              Text(
+                                _email,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 16),
+                              ),
+                            ],
+                          );
+                        }
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      _name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      _email,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 16),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-              if (!(_auth.currentUser?.emailVerified ?? false))
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE0B2),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info, color: Color(0xFFE65100)),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Verify your email for enhanced security',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFFE65100),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -229,6 +364,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ],
                 ),
+              ),
+              _buildInfoSection(
+                'Email Verification',
+                Icons.verified_user,
+                _handleEmailVerification,
               ),
               _buildInfoSection(
                 'Privacy Policy',

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants/categories.dart';
 import 'category_menu_page.dart';
 
@@ -53,11 +54,17 @@ class _HomePageState extends State<HomePage> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
   Timer? _timer;
+  late Stream<DocumentSnapshot> _userStream;
 
   @override
   void initState() {
     super.initState();
     _startAutoScroll();
+    // Initialize user stream with empty stream as default
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    _userStream = userId != null
+        ? FirebaseFirestore.instance.collection('users').doc(userId).snapshots()
+        : const Stream.empty();
   }
 
   void _startAutoScroll() {
@@ -104,115 +111,128 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTopSection() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF9800).withOpacity(0.2),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.person_rounded,
-                          size: 30,
-                          color: const Color(0xFFFF9800).withOpacity(0.7),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFF9800).withOpacity(0.3),
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hello, Daniel',
-                        style: TextStyle(fontSize: 16, color: Colors.white70),
-                      ),
-                      Text(
-                        'Welcome to Spoon Kitchen',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                onPressed: () {
-                  // Navigate to cart page
-                },
+    return StreamBuilder<DocumentSnapshot>(
+      stream: _userStream,
+      builder: (context, snapshot) {
+        String firstName = 'Guest';
+        if (snapshot.hasData && snapshot.data != null) {
+          final userData = snapshot.data!.data() as Map<String, dynamic>?;
+          firstName = userData?['firstName'] ?? 'Guest';
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF9800).withOpacity(0.2),
+                spreadRadius: 5,
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Search your food',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              suffixIcon: const Icon(Icons.filter_list, color: Colors.grey),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_rounded,
+                              size: 30,
+                              color: const Color(0xFFFF9800).withOpacity(0.7),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFFFF9800).withOpacity(0.3),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $firstName',
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.white70),
+                          ),
+                          const Text(
+                            'Welcome to Spoon Kitchen',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart, color: Colors.white),
+                    onPressed: () {
+                      // Navigate to cart page
+                    },
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 20),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search your food',
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: const Icon(Icons.filter_list, color: Colors.grey),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

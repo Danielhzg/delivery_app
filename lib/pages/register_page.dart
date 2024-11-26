@@ -29,30 +29,22 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  Future<void> _showVerificationInstructions() async {
+  Future<void> _showSuccessDialog() async {
     return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Verify Your Email',
+        title: const Text('Registration Successful',
             style: TextStyle(color: Colors.orange)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Registration successful! Please verify your email:'),
-            SizedBox(height: 10),
-            Text('1. Check your email inbox'),
-            Text('2. Click the verification link'),
-            Text('3. Return to the app and login'),
-          ],
-        ),
+        content: const Text('You can now login to your account.'),
         actions: [
           TextButton(
             onPressed: () {
@@ -71,28 +63,29 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     try {
+      if (!_formKey.currentState!.validate()) return;
+
       final UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      // Send email verification
-      await userCredential.user!.sendEmailVerification();
-
       // Create user document in Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
           .set({
+        'firstName': firstNameController.text.trim(),
+        'lastName': lastNameController.text.trim(),
         'email': emailController.text.trim(),
         'isAdmin': false,
         'createdAt': Timestamp.now(),
-        'emailVerified': false,
+        'profilePicture': '',
       });
 
       if (!mounted) return;
-      await _showVerificationInstructions();
+      await _showSuccessDialog();
     } on FirebaseAuthException catch (e) {
       String message;
       if (e.code == 'weak-password') {
@@ -139,6 +132,50 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 0),
 
                   const SizedBox(height: 10),
+                  // First Name field
+                  TextFormField(
+                    controller: firstNameController,
+                    decoration: InputDecoration(
+                      labelText: 'First Name',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon:
+                          const Icon(Icons.person, color: Colors.orange),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your first name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  // Last Name field
+                  TextFormField(
+                    controller: lastNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Last Name',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.person_outline,
+                          color: Colors.orange),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your last name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   // Email field
                   TextFormField(
                     controller: emailController,
