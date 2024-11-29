@@ -7,6 +7,7 @@ import 'pages/home_page.dart';
 import 'pages/comment_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/admin_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const LoginCheck(), // Navigate based on login status
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/admin': (context) => const AdminPage(),
+      },
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import '../models/menu_item.dart';
 import 'package:permission_handler/permission_handler.dart'; // Add this import
 import '../constants/categories.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -94,7 +95,7 @@ class _AdminPageState extends State<AdminPage> {
           content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
-          action: SnackBarAction(
+          action: const SnackBarAction(
             label: 'Settings',
             onPressed: openAppSettings,
             textColor: Colors.white,
@@ -102,6 +103,14 @@ class _AdminPageState extends State<AdminPage> {
         ),
       );
     }
+  }
+
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', false);
+    if (!mounted) return;
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
 
   @override
@@ -112,6 +121,12 @@ class _AdminPageState extends State<AdminPage> {
         title: const Text('Admin Dashboard'),
         backgroundColor: const Color(0xFFFF9800),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -224,9 +239,9 @@ class _AdminPageState extends State<AdminPage> {
                           fit: BoxFit.cover,
                         ),
                       )
-                    : Column(
+                    : const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.add_photo_alternate,
                               size: 50, color: Color(0xFFFF9800)),
                           SizedBox(height: 8),
