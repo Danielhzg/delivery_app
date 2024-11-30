@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:delivery_app/models/order.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+List<CartOrder> orders = [];
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -17,7 +20,27 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Keranjang Anda')),
-      body: orders.isEmpty ? _buildEmptyCart() : _buildCartContent(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('cart').snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final cartItems = snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return CartOrder(
+              productName: data['name'],
+              quantity: data['quantity'],
+              total: data['price'] * data['quantity'],
+              unitPrice: data['price'],
+              imageUrl: data['imageUrl'],
+            );
+          }).toList();
+
+          return cartItems.isEmpty ? _buildEmptyCart() : _buildCartContent(cartItems);
+        },
+      ),
     );
   }
 
@@ -25,19 +48,19 @@ class _CartPageState extends State<CartPage> {
     return const Center(child: Text('Keranjang Anda kosong.'));
   }
 
-  Widget _buildCartContent() {
+  Widget _buildCartContent(List<CartOrder> cartItems) {
     return Column(
       children: [
-        Expanded(child: ListView.builder(itemCount: orders.length, itemBuilder: _buildOrderCard)),
+        Expanded(child: ListView.builder(itemCount: cartItems.length, itemBuilder: (context, index) => _buildOrderCard(context, index, cartItems))),
         const Divider(),
-        _buildTotalAmountDisplay(),
+        _buildTotalAmountDisplay(cartItems),
         _buildCheckoutButton(),
       ],
     );
   }
 
-  Widget _buildOrderCard(BuildContext context, int index) {
-    final order = orders[index];
+  Widget _buildOrderCard(BuildContext context, int index, List<CartOrder> cartItems) {
+    final order = cartItems[index];
     return Card(
       margin: const EdgeInsets.all(8),
       child: Padding(
@@ -47,7 +70,7 @@ class _CartPageState extends State<CartPage> {
             _buildOrderImage(order.imageUrl),
             const SizedBox(width: 16),
             _buildOrderDetails(order),
-            _buildDeleteButton(index),
+            _buildDeleteButton(index, cartItems[index]),
           ],
         ),
       ),
@@ -55,13 +78,16 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildOrderImage(String imageUrl) {
+    final decodedUrl = Uri.decodeComponent(imageUrl);
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover),
+      child: decodedUrl.startsWith('http')
+          ? Image.network(decodedUrl, width: 80, height: 80, fit: BoxFit.cover)
+          : Image.asset('assets/placeholder.png', width: 80, height: 80, fit: BoxFit.cover),
     );
   }
 
-  Widget _buildOrderDetails(Order order) {
+  Widget _buildOrderDetails(CartOrder order) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,14 +100,15 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  Widget _buildDeleteButton(int index) {
+  Widget _buildDeleteButton(int index, CartOrder order) {
     return IconButton(
       icon: const Icon(Icons.delete, color: Colors.red),
-      onPressed: () => _deleteOrder(index),
+      onPressed: () => _deleteOrder(index, order),
     );
   }
 
-  Widget _buildTotalAmountDisplay() {
+  Widget _buildTotalAmountDisplay(List<CartOrder> cartItems) {
+    final totalAmount = cartItems.fold(0.0, (total, order) => total + order.total);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -198,7 +225,20 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  void _deleteOrder(int index) {
+  void _deleteOrder(int index, CartOrder order) async {
+    await FirebaseFirestore.instance
+        .collection('cart')
+        .where('name', isEqualTo: order.productName)
+        .where('price', isEqualTo: order.unitPrice)
+        .where('imageUrl', isEqualTo: order.imageUrl)
+        .limit(1)
+        .get()
+        .then((snapshot) {
+      for (DocumentSnapshot ds in snapshot.docs) {
+        ds.reference.delete();
+      }
+    });
+
     setState(() {
       orders.removeAt(index); // Remove the order from the list
     });

@@ -126,6 +126,14 @@ class CategoryMenuPage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () => _addToCart(item),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF9800),
+                    ),
+                    child: const Text('Add to Cart'),
+                  ),
                 ],
               ),
             ),
@@ -133,5 +141,15 @@ class CategoryMenuPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _addToCart(Map<String, dynamic> item) async {
+    final cartItem = {
+      'name': item['name'],
+      'price': item['price'],
+      'quantity': 1,
+      'imageUrl': item['imageUrl'],
+    };
+    await FirebaseFirestore.instance.collection('cart').add(cartItem);
   }
 }

@@ -8,6 +8,7 @@ import 'pages/comment_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/admin_page.dart';
+import 'models/order.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,12 +85,19 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
+  List<CartOrder> orders = [];
   final List<Widget> _pages = [
     const HomePage(),
     const CartPage(), // Hanya memanggil constructor tanpa parameter Passing empty list for CartPage as placeholder
     const CommentPage(),
     const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    orders = [];
+  }
 
   @override
   Widget build(BuildContext context) {

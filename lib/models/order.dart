@@ -1,12 +1,12 @@
 // order.dart
-class Order {
+class CartOrder {
   String productName;
   int quantity;
   double total;
   double unitPrice; // Price per unit
   String imageUrl;
 
-  Order({
+  CartOrder({
     required this.productName,
     required this.quantity,
     required this.total,
@@ -16,4 +16,4 @@ class Order {
 }
 
 // Global list to store orders
-List<Order> orders = [];
+List<CartOrder> orders = [];
