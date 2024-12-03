@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/imagekit_config.dart';
 
 class CategoryMenuPage extends StatelessWidget {
   final String category;
@@ -72,8 +71,8 @@ class CategoryMenuPage extends StatelessWidget {
 
   Widget _buildMenuItemCard(Map<String, dynamic> item, BuildContext context) {
     // Add debug print to check the item data
-    print('Item data: $item');  // Debug print
-    
+    print('Item data: $item'); // Debug print
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -95,7 +94,8 @@ class CategoryMenuPage extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(15)),
               child: Image.network(
-                item['imageUrl'] ?? 'https://via.placeholder.com/300', // Provide a fallback URL
+                item['imageUrl'] ??
+                    'https://via.placeholder.com/300', // Provide a fallback URL
                 fit: BoxFit.cover,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) {
@@ -145,7 +145,8 @@ class CategoryMenuPage extends StatelessWidget {
                             ),
                           );
                         },
-                        child: const Icon(Icons.shopping_cart, color: Color(0xFFFF9800)),
+                        child: const Icon(Icons.shopping_cart,
+                            color: Color(0xFFFF9800)),
                       ),
                     ),
                   ],
