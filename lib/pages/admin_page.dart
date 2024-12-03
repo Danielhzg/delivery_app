@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/services.dart';
-import 'package:image/image.dart' as img;
-import '../models/menu_item.dart';
-import 'package:permission_handler/permission_handler.dart'; // Add this import
-import '../constants/categories.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/menu_item.dart';
+import '../constants/categories.dart';
+import '../utils/imagekit_config.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -31,28 +29,19 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _pickImage() async {
     try {
-      // Try both permissions since different Android versions need different permissions
-      List<Permission> permissions = [
-        Permission.storage,
-        Permission.photos,
-      ];
-
-      // Request all permissions at once
+      // Request permissions
+      List<Permission> permissions = [Permission.storage, Permission.photos];
       Map<Permission, PermissionStatus> statuses = await permissions.request();
       bool hasAccess = statuses.values.any((status) => status.isGranted);
 
       if (!hasAccess) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to access gallery without permission'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Unable to access gallery without permission')),
         );
         return;
       }
 
-      // Proceed with image picking
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1200,
@@ -62,45 +51,17 @@ class _AdminPageState extends State<AdminPage> {
 
       if (image == null) return;
 
-      final File imageFile = File(image.path);
-      final bytes = await imageFile.readAsBytes();
+      // Upload image to ImageKit
+      final imageUrl = await ImageKitConfig.uploadImage(image.path, 'menu_item_${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-      // Process the image
-      if (bytes.length > 1 * 1024 * 1024) {
-        final img.Image? originalImage = img.decodeImage(bytes);
-        if (originalImage != null) {
-          final img.Image resizedImage = img.copyResize(
-            originalImage,
-            width: 800,
-          );
-          final compressedBytes = img.encodeJpg(resizedImage, quality: 70);
-
-          setState(() {
-            _imageFile = imageFile;
-            final base64Image = base64Encode(compressedBytes);
-            _imageUrlController.text = 'data:image/jpeg;base64,$base64Image';
-          });
-        }
-      } else {
-        setState(() {
-          _imageFile = imageFile;
-          final base64Image = base64Encode(bytes);
-          _imageUrlController.text = 'data:image/jpeg;base64,$base64Image';
-        });
-      }
+      setState(() {
+        _imageFile = File(image.path);
+        _imageUrlController.text = imageUrl;
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-          action: const SnackBarAction(
-            label: 'Settings',
-            onPressed: openAppSettings,
-            textColor: Colors.white,
-          ),
-        ),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }
@@ -109,8 +70,7 @@ class _AdminPageState extends State<AdminPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
     if (!mounted) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
 
   @override
@@ -197,14 +157,11 @@ class _AdminPageState extends State<AdminPage> {
             TextFormField(
               controller: _nameController,
               decoration: _buildInputDecoration('Menu Name'),
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Name is required' : null,
+              validator: (value) => value?.isEmpty ?? true ? 'Name is required' : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _categoryController.text.isEmpty
-                  ? null
-                  : _categoryController.text,
+              value: _categoryController.text.isEmpty ? null : _categoryController.text,
               decoration: _buildInputDecoration('Category'),
               items: menuCategories
                   .map((category) => DropdownMenuItem<String>(
@@ -217,8 +174,7 @@ class _AdminPageState extends State<AdminPage> {
                   _categoryController.text = value ?? '';
                 });
               },
-              validator: (value) =>
-                  value == null ? 'Category is required' : null,
+              validator: (value) => value == null ? 'Category is required' : null,
             ),
             const SizedBox(height: 16),
             GestureDetector(
@@ -242,11 +198,9 @@ class _AdminPageState extends State<AdminPage> {
                     : const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate,
-                              size: 50, color: Color(0xFFFF9800)),
+                          Icon(Icons.add_photo_alternate, size: 50, color: Color(0xFFFF9800)),
                           SizedBox(height: 8),
-                          Text('Tap to add image',
-                              style: TextStyle(color: Color(0xFFFF9800))),
+                          Text('Tap to add image', style: TextStyle(color: Color(0xFFFF9800))),
                         ],
                       ),
               ),
@@ -254,24 +208,21 @@ class _AdminPageState extends State<AdminPage> {
             TextFormField(
               controller: _imageUrlController,
               decoration: _buildInputDecoration('Image URL'),
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Image URL is required' : null,
+              validator: (value) => value?.isEmpty ?? true ? 'Image URL is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _priceController,
               decoration: _buildInputDecoration('Price'),
               keyboardType: TextInputType.number,
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Price is required' : null,
+              validator: (value) => value?.isEmpty ?? true ? 'Price is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
               decoration: _buildInputDecoration('Description'),
               maxLines: 3,
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Description is required' : null,
+              validator: (value) => value?.isEmpty ?? true ? 'Description is required' : null,
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -332,16 +283,24 @@ class _AdminPageState extends State<AdminPage> {
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
             final doc = snapshot.data!.docs[index];
-            final item =
-                MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+            final item = MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>);
 
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: item.imageUrl.startsWith('data:image')
-                      ? MemoryImage(base64Decode(item.imageUrl.split(',')[1]))
-                      : NetworkImage(item.imageUrl) as ImageProvider,
+                  backgroundImage: NetworkImage(
+                    ImageKitConfig.getImageUrl(
+                      item.imageUrl,
+                      transformations: {
+                        'w': '50',
+                        'h': '50',
+                        'q': '75',
+                        'f': 'auto',
+                        'r': '50'  // for circular image
+                      }
+                    ),
+                  ),
                   backgroundColor: Colors.grey[200],
                 ),
                 title: Text(
@@ -386,17 +345,12 @@ class _AdminPageState extends State<AdminPage> {
         if (_editingId == null) {
           await FirebaseFirestore.instance.collection('menu').add(item.toMap());
         } else {
-          await FirebaseFirestore.instance
-              .collection('menu')
-              .doc(_editingId)
-              .update(item.toMap());
+          await FirebaseFirestore.instance.collection('menu').doc(_editingId).update(item.toMap());
         }
         _clearForm();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_editingId == null
-                ? 'Item added successfully'
-                : 'Item updated successfully'),
+            content: Text(_editingId == null ? 'Item added successfully' : 'Item updated successfully'),
             backgroundColor: Colors.green,
           ),
         );

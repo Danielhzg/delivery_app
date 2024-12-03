@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/imagekit_config.dart';
 
 class CategoryMenuPage extends StatelessWidget {
   final String category;
@@ -61,7 +62,7 @@ class CategoryMenuPage extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index].data() as Map<String, dynamic>;
-              return _buildMenuItemCard(item);
+              return _buildMenuItemCard(item, context);
             },
           );
         },
@@ -69,7 +70,10 @@ class CategoryMenuPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItemCard(Map<String, dynamic> item) {
+  Widget _buildMenuItemCard(Map<String, dynamic> item, BuildContext context) {
+    // Add debug print to check the item data
+    print('Item data: $item');  // Debug print
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -90,51 +94,62 @@ class CategoryMenuPage extends StatelessWidget {
             child: ClipRRect(
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(15)),
-              child: item['imageUrl'].startsWith('data:image')
-                  ? Image.memory(
-                      Uri.parse(item['imageUrl']).data!.contentAsBytes(),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    )
-                  : Image.network(
-                      item['imageUrl'],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
+              child: Image.network(
+                item['imageUrl'] ?? 'https://via.placeholder.com/300', // Provide a fallback URL
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  print('Error loading image: $error'); // Add error logging
+                  return const Icon(Icons.error, size: 130);
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFFE65100),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['name'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFFE65100),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${item['price']}',
-                    style: const TextStyle(
-                      color: Color(0xFFFF9800),
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 4),
+                    Text(
+                      '\$${item['price']}',
+                      style: const TextStyle(
+                        color: Color(0xFFFF9800),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => _addToCart(item),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: double.infinity,
+                      child: GestureDetector(
+                        onTap: () {
+                          _addToCart(item);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${item['name']} added to cart!'),
+                            ),
+                          );
+                        },
+                        child: const Icon(Icons.shopping_cart, color: Color(0xFFFF9800)),
+                      ),
                     ),
-                    child: const Text('Add to Cart'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

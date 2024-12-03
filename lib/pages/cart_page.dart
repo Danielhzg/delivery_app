@@ -69,7 +69,7 @@ class _CartPageState extends State<CartPage> {
           children: [
             _buildOrderImage(order.imageUrl),
             const SizedBox(width: 16),
-            _buildOrderDetails(order),
+            Expanded(child: _buildOrderDetails(order)),
             _buildDeleteButton(index, cartItems[index]),
           ],
         ),
@@ -83,12 +83,12 @@ class _CartPageState extends State<CartPage> {
       borderRadius: BorderRadius.circular(8),
       child: decodedUrl.startsWith('http')
           ? Image.network(decodedUrl, width: 80, height: 80, fit: BoxFit.cover)
-          : Image.asset('assets/placeholder.png', width: 80, height: 80, fit: BoxFit.cover),
+          : Image.asset(decodedUrl, width: 80, height: 80, fit: BoxFit.cover),
     );
   }
 
   Widget _buildOrderDetails(CartOrder order) {
-    return Expanded(
+    return Flexible(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -226,18 +226,17 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _deleteOrder(int index, CartOrder order) async {
-    await FirebaseFirestore.instance
+    final querySnapshot = await FirebaseFirestore.instance
         .collection('cart')
         .where('name', isEqualTo: order.productName)
         .where('price', isEqualTo: order.unitPrice)
         .where('imageUrl', isEqualTo: order.imageUrl)
         .limit(1)
-        .get()
-        .then((snapshot) {
-      for (DocumentSnapshot ds in snapshot.docs) {
-        ds.reference.delete();
-      }
-    });
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      await doc.reference.delete();
+    }
 
     setState(() {
       orders.removeAt(index); // Remove the order from the list

@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
-                  ),
+                  ),  
                 ),
               ),
             ],
@@ -478,11 +478,13 @@ class _HomePageState extends State<HomePage> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             child: Stack(
               children: [
-                Image.asset(
+                Image.network(
                   imagePath,
                   fit: BoxFit.cover,
                   height: 130,
                   width: double.infinity,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.error, size: 130),
                 ),
                 Positioned(
                   top: 10,
