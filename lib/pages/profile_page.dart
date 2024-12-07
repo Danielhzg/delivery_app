@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore
 import 'dart:async'; // For StreamSubscription
-import 'dart:io'; // For File
-import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // For base64 encoding
 
 class ProfilePage extends StatefulWidget {

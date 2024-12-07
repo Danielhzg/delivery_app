@@ -4,14 +4,24 @@ import 'pages/Login_page.dart';
 import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/home_page.dart';
-import 'pages/comment_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/admin_page.dart';
 import 'models/order.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MyHttpOverrides();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -88,9 +98,9 @@ class _MainPageState extends State<MainPage> {
   List<CartOrder> orders = [];
   final List<Widget> _pages = [
     const HomePage(),
-    const CartPage(), // Hanya memanggil constructor tanpa parameter Passing empty list for CartPage as placeholder
-    const CommentPage(),
-    const ProfilePage(),
+    const CartPage(),
+    const Center(child: Text('Inbox')), // Add placeholder for Inbox
+    const ProfilePage(), // Move ProfilePage to last position
   ];
 
   @override
@@ -110,6 +120,7 @@ class _MainPageState extends State<MainPage> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed, // Add this to show all items
         selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.black,
         showSelectedLabels: true,

@@ -6,7 +6,7 @@ import '../constants/categories.dart';
 import 'category_menu_page.dart';
 
 void main() {
-  runApp(MyApp()); // Remove const keyword
+  runApp(const MyApp()); // Remove const keyword
 }
 
 class MyApp extends StatelessWidget {
@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
-                  ),  
+                  ),
                 ),
               ),
             ],
@@ -458,6 +458,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildPopularItemCard(String imagePath, String title, String itemId) {
     return Container(
       width: 180,
+      height: 240, // Fixed height to prevent overflow
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         color: Colors.white, // Card background back to white
@@ -478,13 +479,16 @@ class _HomePageState extends State<HomePage> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             child: Stack(
               children: [
-                Image.network(
-                  imagePath,
-                  fit: BoxFit.cover,
+                SizedBox(
+                  // Fixed size container for image
                   height: 130,
                   width: double.infinity,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.error, size: 130),
+                  child: Image.network(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.error, size: 130),
+                  ),
                 ),
                 Positioned(
                   top: 10,
@@ -505,51 +509,61 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFE65100),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Item #$itemId',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFFFF9800),
-                      ),
+          Expanded(
+            // Use Expanded to fill remaining space
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFE65100),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Popular',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF9800),
+                    maxLines: 2, // Limit to 2 lines
+                    overflow: TextOverflow
+                        .ellipsis, // Show ellipsis if text overflows
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        // Make item ID text flexible
+                        child: Text(
+                          'Item #$itemId',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFFF9800),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF9800).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Popular',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF9800),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
