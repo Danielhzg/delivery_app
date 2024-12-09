@@ -51,16 +51,25 @@ class _AdminPageState extends State<AdminPage>
           setState(() {
             _imageFile = File(image.path);
           });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image selected')),
+          );
         }
-      } else {
+      } else if (status.isDenied) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Permission to access gallery denied')),
+        );
+      } else if (status.isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permission permanently denied. Please enable it from settings.')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking image: ${e.toString()}')),
       );
+      print('Error picking image: $e');
     }
   }
 

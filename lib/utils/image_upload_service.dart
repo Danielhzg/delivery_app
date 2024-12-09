@@ -1,22 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as path;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart'; // Add this import
 
 class ImageUploadService {
-  static const String apiKey =
-      "5df09d03a3bc47f29c3f9536c762d92b"; // Replace with your ImgBB API key
-  static const String uploadEndpoint = "https://api.imgbb.com/1/upload";
+  static const String publicKey = "public_mrF+95BntrMir1p8a72kXyqGSrk="; // Replace with your ImageKit public key
+  static const String privateKey = "private_hRgC0U+tExByrN7IDgPkGyu0OUg="; // Replace with your ImageKit private key
+  static const String uploadEndpoint = "https://upload.imagekit.io/api/v1/files/upload";
 
   static void _log(String message, {Map<String, dynamic>? data}) {
     final timestamp = DateTime.now().toIso8601String();
     print('[$timestamp] ImageUpload: $message');
     if (data != null) {
-      print('Data: ${json.encode(data, toEncodable: (object) {
-        if (object is File) return object.path;
-        return object.toString();
-      })}');
+      print('Data: ${data.toString()}');
     }
   }
 
@@ -27,46 +25,43 @@ class ImageUploadService {
         'filePath': imageFile.path,
       });
 
-      // Read file as bytes and encode to base64
-      final bytes = await imageFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      // Create request body
-      final fields = {
-        'key': apiKey,
-        'image': base64Image,
-        'name': path.basename(imageFile.path),
-      };
+      final mimeType = lookupMimeType(imageFile.path);
+      final request = http.MultipartRequest('POST', Uri.parse(uploadEndpoint))
+        ..headers['Authorization'] = 'Basic ${base64Encode(utf8.encode('$privateKey:'))}'
+        ..files.add(await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+          contentType: mimeType != null ? MediaType.parse(mimeType) : null,
+        ))
+        ..fields['fileName'] = path.basename(imageFile.path);
 
       _log('Sending request', data: {
         'endpoint': uploadEndpoint,
-        'imageSize': bytes.length,
+        'fileName': path.basename(imageFile.path),
       });
 
-      // Send POST request
-      final response = await http.post(
-        Uri.parse(uploadEndpoint),
-        body: fields,
-      );
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
 
       _log('Response received', data: {
         'statusCode': response.statusCode,
-        'body': response.body,
+        'body': responseBody,
       });
 
       if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
-          // Use display_url instead of url for direct image access
-          final imageUrl = jsonResponse['data']['display_url'];
+        final jsonResponse = json.decode(responseBody);
+        if (jsonResponse['url'] != null) {
+          final imageUrl = jsonResponse['url'];
           _log('Upload successful', data: {'imageUrl': imageUrl});
           return imageUrl;
         } else {
-          throw Exception('Invalid response format from ImgBB');
+          throw Exception('Invalid response format from ImageKit');
         }
+      } else if (response.statusCode == 403) {
+        throw Exception('Upload failed with status 403: Your account cannot be authenticated. For support kindly contact us at support@imagekit.io');
       } else {
         throw Exception(
-            'Upload failed with status ${response.statusCode}: ${response.body}');
+            'Upload failed with status ${response.statusCode}: $responseBody');
       }
     } catch (e) {
       _log('Error during upload', data: {'error': e.toString()});
@@ -75,7 +70,7 @@ class ImageUploadService {
   }
 
   static String getImageUrl(String imagePath) {
-    // For ImgBB, just return the URL as is since it's already a direct image URL
+    // For ImageKit, just return the URL as is since it's already a direct image URL
     return imagePath;
   }
 }
