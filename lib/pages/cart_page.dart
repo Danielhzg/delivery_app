@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:delivery_app/models/order.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 List<CartOrder> orders = [];
 
@@ -13,6 +14,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   String selectedPaymentMethod = 'Tunai'; // Default payment method
+  final user = FirebaseAuth.instance.currentUser;
 
   double get totalAmount => orders.fold(0.0, (total, order) => total + order.total);
 
@@ -21,7 +23,10 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Keranjang Anda')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('cart').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('cart')
+            .where('userId', isEqualTo: user?.uid)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -216,30 +221,44 @@ class _CartPageState extends State<CartPage> {
     ];
   }
 
-  void _processCheckout() {
+  void _processCheckout() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final cartCollection = FirebaseFirestore.instance.collection('cart');
+      final querySnapshot = await cartCollection.where('userId', isEqualTo: user.uid).get();
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
+    }
+
     setState(() {
       orders.clear(); // Clear orders after checkout
     });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Checkout berhasil dengan $selectedPaymentMethod')),
     );
   }
 
   void _deleteOrder(int index, CartOrder order) async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('cart')
-        .where('name', isEqualTo: order.productName)
-        .where('price', isEqualTo: order.unitPrice)
-        .where('imageUrl', isEqualTo: order.imageUrl)
-        .limit(1)
-        .get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('cart')
+          .where('userId', isEqualTo: user.uid)
+          .where('name', isEqualTo: order.productName)
+          .where('price', isEqualTo: order.unitPrice)
+          .where('imageUrl', isEqualTo: order.imageUrl)
+          .limit(1)
+          .get();
 
-    for (var doc in querySnapshot.docs) {
-      await doc.reference.delete();
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      setState(() {
+        orders.removeAt(index); // Remove the order from the list
+      });
     }
-
-    setState(() {
-      orders.removeAt(index); // Remove the order from the list
-    });
   }
 }

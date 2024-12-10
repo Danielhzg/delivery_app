@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CategoryMenuPage extends StatelessWidget {
   final String category;
@@ -160,12 +161,16 @@ class CategoryMenuPage extends StatelessWidget {
   }
 
   void _addToCart(Map<String, dynamic> item) async {
-    final cartItem = {
-      'name': item['name'],
-      'price': item['price'],
-      'quantity': 1,
-      'imageUrl': item['imageUrl'],
-    };
-    await FirebaseFirestore.instance.collection('cart').add(cartItem);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final cartItem = {
+        'userId': user.uid,
+        'name': item['name'],
+        'price': item['price'],
+        'quantity': 1,
+        'imageUrl': item['imageUrl'],
+      };
+      await FirebaseFirestore.instance.collection('cart').add(cartItem);
+    }
   }
 }

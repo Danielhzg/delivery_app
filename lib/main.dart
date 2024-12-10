@@ -9,6 +9,7 @@ import 'pages/profile_page.dart';
 import 'pages/admin_page.dart';
 import 'models/order.dart';
 import 'dart:io';
+import 'pages/chat_page.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -43,6 +44,12 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/admin': (context) => const AdminPage(),
+        '/chat': (context) => const ChatPage(),
+        '/chatDetail': (context) => ChatDetailPage(
+          userId: ModalRoute.of(context)!.settings.arguments as String,
+          userName: '', // Placeholder, will be set in ChatDetailPage
+          userProfilePic: '', // Placeholder, will be set in ChatDetailPage
+        ),
       },
     );
   }
@@ -99,7 +106,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = [
     const HomePage(),
     const CartPage(),
-    const Center(child: Text('Inbox')), // Add placeholder for Inbox
+    const ChatPage(),
     const ProfilePage(), // Move ProfilePage to last position
   ];
 

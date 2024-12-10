@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:delivery_app/pages/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -55,6 +56,7 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   Timer? _timer;
   late Stream<DocumentSnapshot> _userStream;
+  final TextEditingController _messageController = TextEditingController(); // Add this line
 
   @override
   void initState() {
@@ -86,7 +88,25 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
+    _messageController.dispose(); // Dispose the controller
     super.dispose();
+  }
+
+  void _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    final userName = user?.displayName ?? 'Anonymous';
+
+    final message = {
+      'userId': user?.uid,
+      'userName': userName,
+      'text': _messageController.text.trim(),
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+
+    await FirebaseFirestore.instance.collection('chats').add(message);
+    _messageController.clear();
   }
 
   @override
@@ -94,16 +114,19 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3E0), // Explicit background color
       body: SafeArea(
-        child: Container(
-          color: const Color(0xFFFFF3E0), // Container background
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _buildTopSection()),
-              SliverToBoxAdapter(child: _buildMenuSection()),
-              SliverToBoxAdapter(child: _buildPromoBannerSlider()),
-              SliverToBoxAdapter(child: _buildPopularItemsSection()),
-              SliverToBoxAdapter(child: _buildFreeDeliveryBanner()),
-            ],
+        child: SingleChildScrollView(
+          // Wrap with SingleChildScrollView
+          child: Container(
+            color: const Color(0xFFFFF3E0), // Container background
+            child: Column(
+              children: [
+                _buildTopSection(),
+                _buildMenuSection(),
+                _buildPromoBannerSlider(),
+                _buildPopularItemsSection(),
+                _buildFreeDeliveryBanner(),
+              ],
+            ),
           ),
         ),
       ),
@@ -206,11 +229,9 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                    onPressed: () {
-                      // Navigate to cart page
-                    },
+                  const Flexible(
+                    // Wrap the Row with Flexible
+                    child: Row(),
                   ),
                 ],
               ),
@@ -220,7 +241,8 @@ class _HomePageState extends State<HomePage> {
                   hintText: 'Search your food',
                   hintStyle: TextStyle(color: Colors.grey[400]),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  suffixIcon: const Icon(Icons.filter_list, color: Colors.grey),
+                  suffix: const Icon(Icons.filter_list,
+                      color: Colors.grey), // Use suffix instead of suffixIcon
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(

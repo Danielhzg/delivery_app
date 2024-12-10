@@ -29,11 +29,16 @@ class _AdminPageState extends State<AdminPage>
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
   late TabController _tabController;
+  final TextEditingController _replyController = TextEditingController();
+  String? _selectedUserId;
+  String? _selectedChatUserId; // Add this line
+  String? _selectedChatUserName; // Add this line
+  String? _selectedChatUserProfilePic; // Add this line
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // Update length to 3
   }
 
   Future<void> _pickImage() async {
@@ -99,6 +104,7 @@ class _AdminPageState extends State<AdminPage>
           tabs: const [
             Tab(icon: Icon(Icons.add), text: 'Add/Edit Item'),
             Tab(icon: Icon(Icons.list), text: 'Menu List'),
+            Tab(icon: Icon(Icons.chat), text: 'Customer Chats'), // Add new tab
           ],
         ),
       ),
@@ -107,6 +113,7 @@ class _AdminPageState extends State<AdminPage>
         children: [
           _buildAddEditForm(),
           _buildMenuList(),
+          _buildChatList(), // Add new tab view
         ],
       ),
     );
@@ -213,9 +220,7 @@ class _AdminPageState extends State<AdminPage>
         prefixIcon: const Icon(Icons.category, color: Colors.deepOrange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.deepOrange),
-        ),
+          borderRadius: BorderRadius.circular(8)),
       ),
       items: menuCategories
           .map((category) => DropdownMenuItem<String>(
@@ -289,6 +294,118 @@ class _AdminPageState extends State<AdminPage>
                   ],
                 ),
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildChatList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('chats').doc('admin').collection('messages').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final chatDocs = snapshot.data!.docs;
+
+        if (chatDocs.isEmpty) {
+          return const Center(child: Text('No users have sent messages.'));
+        }
+
+        final userIds = chatDocs.map((doc) => doc['userId']).toSet().toList();
+
+        return ListView.builder(
+          itemCount: userIds.length,
+          itemBuilder: (context, index) {
+            final userId = userIds[index];
+
+            return FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+              builder: (context, userSnapshot) {
+                if (!userSnapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+
+                final user = userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
+                final userName = user['firstName'] ?? 'Anonymous';
+                final userProfilePic = user['profilePic'] ?? '';
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  child: ListTile(
+                    leading: Stack(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: userProfilePic.isNotEmpty
+                              ? NetworkImage(userProfilePic)
+                              : const AssetImage('assets/default_profile.png') as ImageProvider,
+                        ),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('chats')
+                              .doc('admin')
+                              .collection('messages')
+                              .where('userId', isEqualTo: userId)
+                              .where('isRead', isEqualTo: false)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Positioned(
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: const Text(
+                                  '!',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    title: Text(userName),
+                    tileColor: Colors.orange[100], // Set the background color of the bubble
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedChatUserId = userId;
+                        _selectedChatUserName = userName;
+                        _selectedChatUserProfilePic = userProfilePic;
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatDetailPage(
+                            userId: userId,
+                            userName: userName,
+                            userProfilePic: userProfilePic,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             );
           },
         );
@@ -422,5 +539,154 @@ class _AdminPageState extends State<AdminPage>
     _descriptionController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+}
+
+class ChatDetailPage extends StatelessWidget {
+  final String userId;
+  final String userName;
+  final String userProfilePic;
+
+  const ChatDetailPage({
+    Key? key,
+    required this.userId,
+    required this.userName,
+    required this.userProfilePic,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(userName),
+        backgroundColor: Colors.orange,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('chats')
+                  .doc('admin')
+                  .collection('messages')
+                  .where('userId', isEqualTo: userId)
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final messages = snapshot.data!.docs;
+
+                if (messages.isEmpty) {
+                  return const Center(child: Text('No messages yet.'));
+                }
+
+                return ListView.builder(
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final messageData = messages[index].data() as Map<String, dynamic>? ?? {};
+                    final isAdmin = messageData['userId'] == 'admin';
+                    return _buildMessageBubble(messageData['text'] ?? '', isAdmin, messageData['userId'] ?? '', messageData['userName'] ?? 'Anonymous');
+                  },
+                );
+              },
+            ),
+          ),
+          _buildReplyInput(userId),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(String message, bool isAdmin, String userId, String userName) {
+    return Align(
+      alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isAdmin)
+            CircleAvatar(
+              backgroundImage: userProfilePic.isNotEmpty
+                  ? NetworkImage(userProfilePic)
+                  : const AssetImage('assets/default_profile.png') as ImageProvider,
+            ),
+          const SizedBox(width: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isAdmin ? Colors.green[100] : Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(10),
+                topRight: const Radius.circular(10),
+                bottomLeft: isAdmin ? const Radius.circular(10) : const Radius.circular(0),
+                bottomRight: isAdmin ? const Radius.circular(0) : const Radius.circular(10),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isAdmin) Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(message),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyInput(String userId) {
+    final TextEditingController _replyController = TextEditingController();
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _replyController,
+              decoration: InputDecoration(
+                hintText: 'Type a reply...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.send, color: Colors.green),
+            onPressed: () async {
+              if (_replyController.text.trim().isEmpty) return;
+
+              final message = {
+                'userId': 'admin',
+                'userName': 'Admin',
+                'text': _replyController.text.trim(),
+                'timestamp': FieldValue.serverTimestamp(),
+                'isRead': false,
+              };
+
+              await FirebaseFirestore.instance.collection('chats').doc(userId).collection('messages').add(message);
+              _replyController.clear();
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
