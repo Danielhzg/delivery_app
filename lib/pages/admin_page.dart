@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';  // Add this import
 import '../models/menu_item.dart';
 import '../constants/categories.dart';
 import '../utils/image_upload_service.dart';
@@ -302,116 +303,166 @@ class _AdminPageState extends State<AdminPage>
   }
 
   Widget _buildChatList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('chats').doc('admin').collection('messages').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+  return StreamBuilder<QuerySnapshot>(
+    // Change the stream to get messages from admin's collection
+    stream: FirebaseFirestore.instance
+        .collection('chats')
+        .doc('admin')
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots(),
+    builder: (context, chatSnapshot) {
+      if (!chatSnapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      // Get unique user IDs from messages
+      Set<String> userIds = {};
+      for (var doc in chatSnapshot.data!.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['userId'] != 'admin') {
+          userIds.add(data['userId'] as String);
         }
+      }
 
-        final chatDocs = snapshot.data!.docs;
+      if (userIds.isEmpty) {
+        return const Center(child: Text('No chats available'));
+      }
 
-        if (chatDocs.isEmpty) {
-          return const Center(child: Text('No users have sent messages.'));
-        }
+      return ListView.builder(
+        itemCount: userIds.length,
+        itemBuilder: (context, index) {
+          final userId = userIds.elementAt(index);
+          
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .get(),
+            builder: (context, userSnapshot) {
+              if (!userSnapshot.hasData) {
+                return const SizedBox.shrink();
+              }
 
-        final userIds = chatDocs.map((doc) => doc['userId']).toSet().toList();
+              final userData = userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
+              final userName = userData['firstName'] ?? 'Anonymous';
+              final userProfilePic = userData['profilePic'] ?? '';
 
-        return ListView.builder(
-          itemCount: userIds.length,
-          itemBuilder: (context, index) {
-            final userId = userIds[index];
+              return StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('chats')
+                    .doc(userId)
+                    .collection('messages')
+                    .orderBy('timestamp', descending: true)
+                    .limit(1)
+                    .snapshots(),
+                builder: (context, messageSnapshot) {
+                  bool hasUnreadMessages = false;
+                  String lastMessageText = '';
+                  DateTime? lastMessageTime;
 
-            return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
-              builder: (context, userSnapshot) {
-                if (!userSnapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
+                  if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
+                    final lastMessage = messageSnapshot.data!.docs.first.data() as Map<String, dynamic>;
+                    lastMessageText = lastMessage['text'] ?? '';
+                    lastMessageTime = (lastMessage['timestamp'] as Timestamp?)?.toDate();
+                    hasUnreadMessages = lastMessage['userId'] != 'admin' && 
+                                      !(lastMessage['isRead'] ?? false);
+                  }
 
-                final user = userSnapshot.data!.data() as Map<String, dynamic>? ?? {};
-                final userName = user['firstName'] ?? 'Anonymous';
-                final userProfilePic = user['profilePic'] ?? '';
-
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  child: ListTile(
-                    leading: Stack(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: userProfilePic.isNotEmpty
-                              ? NetworkImage(userProfilePic)
-                              : const AssetImage('assets/default_profile.png') as ImageProvider,
-                        ),
-                        StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('chats')
-                              .doc('admin')
-                              .collection('messages')
-                              .where('userId', isEqualTo: userId)
-                              .where('isRead', isEqualTo: false)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return Positioned(
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: ListTile(
+                      leading: Stack(
+                        children: [
+                          CircleAvatar(
+                            backgroundImage: userProfilePic.isNotEmpty
+                                ? NetworkImage(userProfilePic)
+                                : const AssetImage('assets/default_profile.png') as ImageProvider,
+                            radius: 24,
+                          ),
+                          if (hasUnreadMessages)
+                            Positioned(
                               right: 0,
+                              top: 0,
                               child: Container(
-                                padding: const EdgeInsets.all(2),
+                                padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                child: const Text(
-                                  '!',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                  ),
-                                  textAlign: TextAlign.center,
+                                  minWidth: 12,
+                                  minHeight: 12,
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    title: Text(userName),
-                    tileColor: Colors.orange[100], // Set the background color of the bubble
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _selectedChatUserId = userId;
-                        _selectedChatUserName = userName;
-                        _selectedChatUserProfilePic = userProfilePic;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatDetailPage(
-                            userId: userId,
-                            userName: userName,
-                            userProfilePic: userProfilePic,
+                            ),
+                        ],
+                      ),
+                      title: Text(
+                        userName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: lastMessageText.isNotEmpty
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lastMessageText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (lastMessageTime != null)
+                                  Text(
+                                    _formatTimestamp(lastMessageTime),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                              ],
+                            )
+                          : null,
+                      tileColor: hasUnreadMessages ? Colors.orange[50] : null,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatDetailPage(
+                              userId: userId,
+                              userName: userName,
+                              userProfilePic: userProfilePic,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
+
+String _formatTimestamp(DateTime dateTime) {
+  final now = DateTime.now();
+  final difference = now.difference(dateTime);
+
+  if (difference.inDays == 0) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  } else if (difference.inDays == 1) {
+    return 'Yesterday';
+  } else if (difference.inDays < 7) {
+    final day = DateFormat('EEEE').format(dateTime);
+    return day;
+  } else {
+    return DateFormat('dd/MM/yyyy').format(dateTime);
   }
+}
 
   void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
@@ -542,7 +593,7 @@ class _AdminPageState extends State<AdminPage>
   }
 }
 
-class ChatDetailPage extends StatelessWidget {
+class ChatDetailPage extends StatefulWidget {
   final String userId;
   final String userName;
   final String userProfilePic;
@@ -555,10 +606,23 @@ class ChatDetailPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<ChatDetailPage> createState() => _ChatDetailPageState();
+}
+
+class _ChatDetailPageState extends State<ChatDetailPage> {
+  final TextEditingController _replyController = TextEditingController();
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(userName),
+        title: Text(widget.userName),
         backgroundColor: Colors.orange,
       ),
       body: Column(
@@ -567,9 +631,8 @@ class ChatDetailPage extends StatelessWidget {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('chats')
-                  .doc('admin')
+                  .doc(widget.userId)
                   .collection('messages')
-                  .where('userId', isEqualTo: userId)
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -578,67 +641,67 @@ class ChatDetailPage extends StatelessWidget {
                 }
 
                 final messages = snapshot.data!.docs;
-
-                if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
-                }
+                _markMessagesAsRead();
 
                 return ListView.builder(
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final messageData = messages[index].data() as Map<String, dynamic>? ?? {};
+                    final messageData = messages[index].data() as Map<String, dynamic>;
                     final isAdmin = messageData['userId'] == 'admin';
-                    return _buildMessageBubble(messageData['text'] ?? '', isAdmin, messageData['userId'] ?? '', messageData['userName'] ?? 'Anonymous');
+                    return _buildMessageBubble(
+                      messageData['text'] ?? '',
+                      isAdmin,
+                      messageData['userId'] ?? '',
+                      messageData['userName'] ?? 'Anonymous',
+                      messageData['timestamp'] as Timestamp?,
+                    );
                   },
                 );
               },
             ),
           ),
-          _buildReplyInput(userId),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(String message, bool isAdmin, String userId, String userName) {
-    return Align(
-      alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isAdmin)
-            CircleAvatar(
-              backgroundImage: userProfilePic.isNotEmpty
-                  ? NetworkImage(userProfilePic)
-                  : const AssetImage('assets/default_profile.png') as ImageProvider,
-            ),
-          const SizedBox(width: 8),
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: isAdmin ? Colors.green[100] : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(10),
-                topRight: const Radius.circular(10),
-                bottomLeft: isAdmin ? const Radius.circular(10) : const Radius.circular(0),
-                bottomRight: isAdmin ? const Radius.circular(0) : const Radius.circular(10),
-              ),
+              color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
+                  blurRadius: 4,
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                if (!isAdmin) Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(message),
+                Expanded(
+                  child: TextField(
+                    controller: _replyController,
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                    ),
+                    maxLines: null,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
+                ),
               ],
             ),
           ),
@@ -647,46 +710,135 @@ class ChatDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildReplyInput(String userId) {
-    final TextEditingController _replyController = TextEditingController();
+  Future<void> _markMessagesAsRead() async {
+    try {
+      final messages = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.userId)
+          .collection('messages')
+          .where('isRead', isEqualTo: false)
+          .where('userId', isNotEqualTo: 'admin')
+          .get();
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _replyController,
-              decoration: InputDecoration(
-                hintText: 'Type a reply...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+      final batch = FirebaseFirestore.instance.batch();
+      for (var doc in messages.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      print('Error marking messages as read: $e');
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _replyController.text.trim();
+    if (text.isEmpty) return;
+
+    final message = {
+      'userId': 'admin',
+      'userName': 'Admin',
+      'text': text,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+    };
+
+    try {
+      // Add message to user's chat collection
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.userId)
+          .collection('messages')
+          .add(message);
+
+      // Add message to admin's chat collection
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc('admin')
+          .collection('messages')
+          .add(message);
+
+      _replyController.clear();
+    } catch (e) {
+      print('Error sending message: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send message: $e')),
+      );
+    }
+  }
+
+  Widget _buildMessageBubble(String message, bool isAdmin, String userId, String userName, Timestamp? timestamp) {
+    return Align(
+      alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        child: Row(
+          mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isAdmin)
+              CircleAvatar(
+                backgroundImage: widget.userProfilePic.isNotEmpty
+                    ? NetworkImage(widget.userProfilePic)
+                    : const AssetImage('assets/default_profile.png') as ImageProvider,
+                radius: 16,
+              ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isAdmin ? Colors.green[100] : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!isAdmin) 
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    Text(message),
+                    if (timestamp != null)
+                      Text(
+                        _formatTimestamp(timestamp),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Colors.green),
-            onPressed: () async {
-              if (_replyController.text.trim().isEmpty) return;
-
-              final message = {
-                'userId': 'admin',
-                'userName': 'Admin',
-                'text': _replyController.text.trim(),
-                'timestamp': FieldValue.serverTimestamp(),
-                'isRead': false,
-              };
-
-              await FirebaseFirestore.instance.collection('chats').doc(userId).collection('messages').add(message);
-              _replyController.clear();
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final diff = now.difference(date);
+
+    if (diff.inDays == 0) {
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 }

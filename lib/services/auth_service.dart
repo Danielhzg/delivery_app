@@ -12,4 +12,8 @@ class AuthService {
     final doc = await _firestore.collection('users').doc(user.uid).get();
     return doc.data()?['isAdmin'] ?? false;
   }
+
+  String? getCurrentUserId() {
+    return _auth.currentUser?.uid;
+  }
 }
