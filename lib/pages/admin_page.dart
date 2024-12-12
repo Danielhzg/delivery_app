@@ -304,7 +304,6 @@ class _AdminPageState extends State<AdminPage>
 
   Widget _buildChatList() {
   return StreamBuilder<QuerySnapshot>(
-    // Change the stream to get messages from admin's collection
     stream: FirebaseFirestore.instance
         .collection('chats')
         .doc('admin')
@@ -316,7 +315,6 @@ class _AdminPageState extends State<AdminPage>
         return const Center(child: CircularProgressIndicator());
       }
 
-      // Get unique user IDs from messages
       Set<String> userIds = {};
       for (var doc in chatSnapshot.data!.docs) {
         final data = doc.data() as Map<String, dynamic>;
