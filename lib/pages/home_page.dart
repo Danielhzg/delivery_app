@@ -57,6 +57,8 @@ class _HomePageState extends State<HomePage> {
   Timer? _timer;
   late Stream<DocumentSnapshot> _userStream;
   final TextEditingController _messageController = TextEditingController(); // Add this line
+  final TextEditingController _searchController = TextEditingController(); // Add this line
+  List<MenuItem> _searchResults = []; // Add this line
 
   @override
   void initState() {
@@ -89,6 +91,7 @@ class _HomePageState extends State<HomePage> {
     _timer?.cancel();
     _pageController.dispose();
     _messageController.dispose(); // Dispose the controller
+    _searchController.dispose(); // Dispose the search controller
     super.dispose();
   }
 
@@ -109,6 +112,27 @@ class _HomePageState extends State<HomePage> {
     _messageController.clear();
   }
 
+  void _searchMenuItems(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+      });
+      return;
+    }
+
+    final results = await FirebaseFirestore.instance
+        .collection('menu')
+        .where('name', isGreaterThanOrEqualTo: query)
+        .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+        .get();
+
+    setState(() {
+      _searchResults = results.docs
+          .map((doc) => MenuItem.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,6 +145,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               children: [
                 _buildTopSection(),
+                _buildSearchResults(), // Add this line
                 _buildMenuSection(),
                 _buildPromoBannerSlider(),
                 _buildPopularItemsSection(),
@@ -237,12 +262,13 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: _searchController, // Add this line
+                onChanged: _searchMenuItems, // Add this line
                 decoration: InputDecoration(
                   hintText: 'Search your food',
                   hintStyle: TextStyle(color: Colors.grey[400]),
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  suffix: const Icon(Icons.filter_list,
-                      color: Colors.grey), // Use suffix instead of suffixIcon
+                  suffix: const Icon(Icons.filter_list, color: Colors.grey),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -629,6 +655,43 @@ class _HomePageState extends State<HomePage> {
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    if (_searchResults.isEmpty) return Container(); // Return empty container if no results
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Search Results',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFE65100),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 250,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _searchResults.length,
+              itemBuilder: (context, index) {
+                final item = _searchResults[index];
+                return _buildPopularItemCard(
+                  item.imageUrl,
+                  item.name,
+                  item.id,
+                );
+              },
             ),
           ),
         ],

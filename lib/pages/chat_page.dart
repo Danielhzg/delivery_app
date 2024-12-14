@@ -156,7 +156,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildMessageBubble(String message, bool isAdmin, String userId, String userName, Timestamp? timestamp, String messageId) {
     return GestureDetector(
-      onLongPress: () => _showDeleteDialog(messageId),
+      onLongPress: () => _showDeleteDialog(messageId, userId),
       child: Align(
         alignment: isAdmin ? Alignment.centerLeft : Alignment.centerRight,
         child: Container(
@@ -176,7 +176,12 @@ class _ChatPageState extends State<ChatPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: isAdmin ? Colors.white : Colors.green[100],
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: isAdmin ? const Radius.circular(0) : const Radius.circular(20),
+                      bottomRight: isAdmin ? const Radius.circular(20) : const Radius.circular(0),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -197,7 +202,10 @@ class _ChatPageState extends State<ChatPage> {
                             color: Colors.grey,
                           ),
                         ),
-                      Text(message),
+                      Text(
+                        message,
+                        style: const TextStyle(fontSize: 16),
+                      ),
                       if (timestamp != null)
                         Text(
                           _formatTimestamp(timestamp),
@@ -217,7 +225,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _showDeleteDialog(String messageId) {
+  void _showDeleteDialog(String messageId, String userId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -230,7 +238,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
           TextButton(
             onPressed: () {
-              _deleteMessage(messageId);
+              _deleteMessage(messageId, userId);
               Navigator.of(context).pop();
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),
@@ -240,9 +248,9 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Future<void> _deleteMessage(String messageId) async {
+  Future<void> _deleteMessage(String messageId, String userId) async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null || user.uid != userId) return; // Only allow deleting own messages
 
     try {
       // Delete from user's chat collection

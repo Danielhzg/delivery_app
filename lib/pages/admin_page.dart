@@ -767,7 +767,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   Widget _buildMessageBubble(String message, bool isAdmin, String userId, String userName, Timestamp? timestamp, String messageId) {
     return GestureDetector(
-      onLongPress: () => _showDeleteDialog(messageId),
+      onLongPress: () => _showDeleteDialog(messageId, userId),
       child: Align(
         alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
@@ -830,7 +830,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  void _showDeleteDialog(String messageId) {
+  void _showDeleteDialog(String messageId, String userId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -843,7 +843,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           ),
           TextButton(
             onPressed: () {
-              _deleteMessage(messageId);
+              _deleteMessage(messageId, userId);
               Navigator.of(context).pop();
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),
@@ -853,30 +853,32 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  Future<void> _deleteMessage(String messageId) async {
-    try {
-      // Delete from user's chat collection
-      await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(widget.userId)
-          .collection('messages')
-          .doc(messageId)
-          .delete();
+  Future<void> _deleteMessage(String messageId, String userId) async {
+  if (userId != 'admin') return; // Only allow deleting admin's own messages
 
-      // Delete from admin's chat collection
-      await FirebaseFirestore.instance
-          .collection('chats')
-          .doc('admin')
-          .collection('messages')
-          .doc(messageId)
-          .delete();
-    } catch (e) {
-      print('Error deleting message: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete message: $e')),
-      );
-    }
+  try {
+    // Delete from user's chat collection
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.userId)
+        .collection('messages')
+        .doc(messageId)
+        .delete();
+
+    // Delete from admin's chat collection
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc('admin')
+        .collection('messages')
+        .doc(messageId)
+        .delete();
+  } catch (e) {
+    print('Error deleting message: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to delete message: $e')),
+    );
   }
+}
 
   String _formatTimestamp(Timestamp timestamp) {
     final now = DateTime.now();
